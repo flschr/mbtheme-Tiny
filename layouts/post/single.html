@@ -26,6 +26,8 @@
         {{ .Content }}
   </article>
 
+  <button class="tinylytics_kudos"></button>
+
   <!-- {{ if templates.Exists "partials/microhook-categories.html" }}
   {{ partial "microhook-categories.html" . }}
   {{ else }}
@@ -38,14 +40,11 @@
     </ul>
   {{ end }}
   {{ end }}
-  {{ end }}-->
+  {{ end }}
 
   {{ if templates.Exists "partials/microhook-after-post.html" }}
   {{ partial "microhook-after-post.html" . }}
-  {{ end }}
-
-  <button class="tinylytics_kudos"></button>
-
+  {{ end }}-->
 
 </div>
 {{ if or (templates.Exists "partials/reply-by-email.html") (templates.Exists "partials/conversation-link.html") (templates.Exists "partials/plugin_tinylytics.html") (templates.Exists "partials/reply-on-mastodon.html") (templates.Exists "partials/microhook-share-button.html")}}
