@@ -1,50 +1,113 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="twitter:card" content="summary">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  
+  <!-- Security Headers -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  
+  <!-- DNS-Prefetch & Preconnect für externe Ressourcen -->
+  <link rel="dns-prefetch" href="https://micro.blog">
+  <link rel="preconnect" href="https://micro.blog" crossorigin>
+  <link rel="preconnect" href="https://micro.blog/photos" crossorigin>
+  
+  <!-- Cache-Buster: Nutze Hugo Build-Zeit oder Git-Hash -->
+  {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
+  
+  <!-- Kritisches CSS mit Fingerprinting & Minification -->
+  {{ if templates.Exists "partials/microhook-uncss.html" }}
+    {{ partial "microhook-uncss.html" . }}
+  {{ else }}
+    {{ $mainCss := resources.Get "css/main.css" }}
+    {{ if $mainCss }}
+      {{ $mainCss = $mainCss | minify | fingerprint }}
+      <link rel="stylesheet" href="{{ $mainCss.Permalink }}" integrity="{{ $mainCss.Data.Integrity }}">
+    {{ else }}
+      <link rel="stylesheet" href="{{ "css/main.css" | relURL }}?v={{ $buildHash }}">
+    {{ end }}
+  {{ end }}
+  
+  <!-- Social Media Meta Tags -->
+  <meta name="twitter:card" content="{{ if .Params.photos }}summary_large_image{{ else }}summary{{ end }}">
+  {{ with .Site.Params.twitter_username }}
+    <meta name="twitter:site" content="@{{ . }}">
+  {{ end }}
+  
   {{ with .Title }}
-  <meta name="twitter:title" content="{{ . }}">
-  <meta property="og:title" content="{{ . }}">
+    <meta name="twitter:title" content="{{ . }}">
+    <meta property="og:title" content="{{ . }}">
   {{ else }}
-  <meta name="twitter:title" content="{{ .Site.Title }}">
-  <meta property="og:title" content="{{ .Site.Title }}">
+    <meta name="twitter:title" content="{{ .Site.Title }}">
+    <meta property="og:title" content="{{ .Site.Title }}">
   {{ end }}
+  
   {{ if .IsHome }}
-  <meta name="twitter:description" content="{{ .Site.Params.itunes_description | truncate 125 }}">
-  <meta name="og:description" content="{{ .Site.Params.itunes_description | truncate 60 }}">
-  <meta name="description" content="{{ .Site.Params.itunes_description }}">
-  <meta name="twitter:image" content="{{ .Site.Author.avatar }}">
-  <meta property="og:image" content="{{ .Site.Author.avatar }}">
+    <meta name="twitter:description" content="{{ .Site.Params.itunes_description | truncate 125 }}">
+    <meta property="og:description" content="{{ .Site.Params.itunes_description | truncate 200 }}">
+    <meta name="description" content="{{ .Site.Params.itunes_description }}">
+    <meta name="twitter:image" content="{{ .Site.Author.avatar }}">
+    <meta property="og:image" content="{{ .Site.Author.avatar }}">
   {{ else }}
-  <meta name="twitter:description" content="{{ .Summary | truncate 60 }}">
-  <meta name="og:description" content="{{ .Summary | truncate 60 }}">
-  <meta name="description" content="{{ .Summary }}">
+    {{ $description := .Summary | plainify | truncate 155 }}
+    <meta name="twitter:description" content="{{ $description }}">
+    <meta property="og:description" content="{{ $description }}">
+    <meta name="description" content="{{ $description }}">
   {{ end }}
+  
   {{ if .Params.photos }}
-    {{ range .Params.photos }}
-    <meta name="twitter:image" content="{{ . }}">
-    <meta property="og:image" content="{{ . }}">
+    {{ range first 1 .Params.photos }}
+      <meta name="twitter:image" content="{{ . }}">
+      <meta property="og:image" content="{{ . }}">
+      <meta property="og:image:alt" content="{{ $.Title | default "Foto" }}">
     {{ end }}
   {{ else }}
     {{ with .Params.opengraph.image }}
-    <meta name="twitter:image" content="{{ . }}">
-    <meta property="og:image" content="{{ . }}">
+      <meta name="twitter:image" content="{{ . }}">
+      <meta property="og:image" content="{{ . }}">
     {{ end }}
   {{ end }}
-  <title>{{ block "title" . }}{{ if .IsHome }}{{ .Site.Title }}{{ else if .Title }}{{ .Title }} | {{ .Site.Title }}{{ else }}{{ delimit (split .Summary " " | first 5) " " }} … | {{ .Site.Title }}{{ end }}{{ end }}</title>
+  
+  <!-- Open Graph zusätzliche Felder -->
+  <meta property="og:type" content="{{ if .IsHome }}website{{ else }}article{{ end }}">
+  <meta property="og:url" content="{{ .Permalink }}">
+  <meta property="og:site_name" content="{{ .Site.Title }}">
+  {{ if not .IsHome }}
+    <meta property="article:published_time" content="{{ .PublishDate.Format "2006-01-02T15:04:05Z07:00" }}">
+    {{ with .Lastmod }}
+      <meta property="article:modified_time" content="{{ .Format "2006-01-02T15:04:05Z07:00" }}">
+    {{ end }}
+  {{ end }}
+  
+  <!-- Titel -->
+  <title>
+    {{ block "title" . -}}
+      {{ if .IsHome }}
+        {{ .Site.Title }}
+      {{ else if .Title }}
+        {{ .Title }} | {{ .Site.Title }}
+      {{ else }}
+        {{ delimit (split .Summary " " | first 5) " " }} … | {{ .Site.Title }}
+      {{ end }}
+    {{- end }}
+  </title>
+  
+  <!-- Canonical URL -->
   <link rel="canonical" href="{{ .Permalink }}">
-  {{ if templates.Exists "partials/microhook-uncss.html" }}
-  {{ partial "microhook-uncss.html" . }}
-  {{ else }}
-  <link rel="stylesheet" href="{{ "css/main.css" | relURL }}?{{ .Site.Params.theme_seconds }}">
+  
+  <!-- Robots Meta -->
+  {{ if or .Params.noindex (eq .Kind "404") }}
+    <meta name="robots" content="noindex, nofollow">
   {{ end }}
-  {{ if templates.Exists "partials/microhook-unfontawesome.html" }}
-  {{ else }}
-  <link rel="stylesheet" href="{{ "css/all.min.css" | relURL }}?{{ .Site.Params.theme_seconds }}">
-  {{ end }}
+  
+  <!-- Structured Data -->
+  {{ partial "schema_org.html" . }}
+  
+  <!-- Micro.blog Head (enthält Favicon, Feeds, IndieWeb Links) -->
   {{ partial "microblog_head.html" . }}
+  
+  <!-- Custom Hooks -->
   {{ if templates.Exists "partials/microhook-head.html" }}
-  {{ partial "microhook-head.html" . }}
+    {{ partial "microhook-head.html" . }}
   {{ end }}
 </head>

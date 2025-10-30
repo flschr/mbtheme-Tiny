@@ -1,0 +1,79 @@
+{{/* Tiny Theme render-image.html — Optimized for fischr.org */}}
+{{- $page  := .Page -}}
+{{- $dest  := printf "%s" .Destination -}}
+{{- $alt   := .Text | default "" -}}
+{{- $title := .Title -}}
+
+{{/* Lokales Resource holen, wenn kein absoluter Link */}}
+{{- $res := cond (hasPrefix $dest "http") nil ($page.Resources.GetMatch $dest) -}}
+
+{{/* --- LCP-Erkennung ----------------------------------------------------- */}}
+{{- $idx := add ($page.Scratch.Get "imgIndex" | default 0) 1 -}}
+{{- $page.Scratch.Set "imgIndex" $idx -}}
+{{- $isFirst := eq $idx 1 -}}
+
+{{- $heroParam := $page.Params.heroImage | default false -}}
+{{- $heroRes   := cond $heroParam ($page.Resources.GetMatch (printf "%v" $heroParam)) ($page.Resources.GetMatch "hero*") -}}
+
+{{- $isLCP := false -}}
+{{- if $res -}}
+  {{- if or (eq $res $heroRes) (hasPrefix (lower $res.Name) "hero") -}}
+    {{- $isLCP = true -}}
+  {{- end -}}
+{{- end -}}
+{{- if and (not $isLCP) $isFirst -}}
+  {{- $isLCP = true -}}
+{{- end -}}
+
+{{- $decoding := "async" -}}
+{{- $fetchpriority := cond $isLCP "high" "" -}}
+
+{{- if $res -}}
+  {{/* Lokales Bild: responsive Derivate */}}
+  {{- $widths := slice 400 768 1024 1440 -}}
+  {{- $srcset := slice -}}
+  {{- range $w := $widths -}}
+    {{- $v := $res.Fit (printf "%dx q85" $w) -}}
+    {{- $srcset = $srcset | append (printf "%s %dw" $v.RelPermalink $w) -}}
+  {{- end -}}
+  {{- $default := $res.Fit "1024x q85" -}}
+  <img
+    src="{{ $default.RelPermalink }}"
+    srcset="{{ delimit $srcset ", " }}"
+    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 95vw, 720px"
+    width="{{ $default.Width }}" height="{{ $default.Height }}"
+    decoding="{{ $decoding }}"
+    {{ if $fetchpriority }}fetchpriority="{{ $fetchpriority }}"{{ end }}
+    alt="{{ $alt }}"
+    {{ with $title }}title="{{ . }}"{{ end }}>
+{{- else -}}
+  {{/* Extern/Micro.blog: Unterscheide zwischen photos/-URLs und anderen */}}
+  {{- $abs := cond (hasPrefix $dest "http") $dest ($dest | absURL) -}}
+  {{- $isMBPhotos := or (hasPrefix $abs "https://micro.blog/photos/") (hasPrefix $abs "http://micro.blog/photos/") -}}
+  
+  {{- $src300  := "" -}}
+  {{- $src600  := "" -}}
+  {{- $src1200 := "" -}}
+  
+  {{- if $isMBPhotos -}}
+    {{/* Bereits micro.blog/photos/ URL - nur Size-Parameter ersetzen */}}
+    {{- $src300  = replaceRE `/photos/[^/]+/` "/photos/300x/" $abs -}}
+    {{- $src600  = replaceRE `/photos/[^/]+/` "/photos/600x/" $abs -}}
+    {{- $src1200 = replaceRE `/photos/[^/]+/` "/photos/1200x/" $abs -}}
+  {{- else -}}
+    {{/* Andere URL (inkl. eu.uploads) - durch Proxy mit URL-encoding */}}
+    {{- $encoded := $abs | urlquery -}}
+    {{- $src300  = printf "https://micro.blog/photos/300x/%s" $encoded -}}
+    {{- $src600  = printf "https://micro.blog/photos/600x/%s" $encoded -}}
+    {{- $src1200 = printf "https://micro.blog/photos/1200x/%s" $encoded -}}
+  {{- end -}}
+  
+  <img
+    src="{{ $src600 }}"
+    srcset="{{ $src300 }} 300w, {{ $src600 }} 600w, {{ $src1200 }} 1200w"
+    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 95vw, 720px"
+    decoding="{{ $decoding }}"
+    {{ if $fetchpriority }}fetchpriority="{{ $fetchpriority }}"{{ end }}
+    alt="{{ $alt }}"
+    {{ with $title }}title="{{ . }}"{{ end }}>
+{{- end -}}

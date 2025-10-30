@@ -1,0 +1,31 @@
+<!-- Favicon -->
+<link rel="shortcut icon" href="/uploads/2025/favicon.png" type="image/x-icon">
+<link rel="icon" href="/uploads/2025/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/uploads/2025/favicon.png">
+
+<!-- Feeds -->
+{{ $title := site.Title }}
+<link rel="alternate" type="application/rss+xml"   title="{{ $title }}" href="{{ "feed.xml"  | absURL }}">
+<link rel="alternate" type="application/feed+json" title="{{ $title }}" href="{{ "feed.json" | absURL }}">
+
+<!-- Nur zusätzliche Output-Formate ausgeben, keine RSS/JSON-Dopplungen -->
+{{ range .AlternativeOutputFormats -}}
+  {{- if and (ne .Name "RSS") (ne .Name "JSON") -}}
+    <link rel="{{ .Rel }}" href="{{ .Permalink }}" type="{{ .MediaType.Type }}" title="{{ $title }}">
+  {{- end -}}
+{{- end }}
+
+<!-- IndieWeb / rel=me Links -->
+<link rel="me" href="https://micro.blog/fischr?remote_follow=1">
+<link rel="me" href="https://github.com/flschr">
+<link rel="me" href="https://www.openstreetmap.org/user/fischr">
+<link rel="me" href="https://twitter.com/flschr">
+
+<!-- IndieWeb Endpoints -->
+<link rel="EditURI" type="application/rsd+xml" href="{{ "rsd.xml" | absURL }}">
+<link rel="authorization_endpoint" href="https://micro.blog/indieauth/auth">
+<link rel="token_endpoint" href="https://micro.blog/indieauth/token">
+<link rel="subscribe" href="https://micro.blog/users/follow">
+<link rel="webmention" href="https://micro.blog/webmention">
+<link rel="micropub" href="https://micro.blog/micropub">
+<link rel="microsub" href="https://micro.blog/microsub">

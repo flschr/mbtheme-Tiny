@@ -1,0 +1,657 @@
+/* ==========================================================================
+   CSS VARIABLES
+   ========================================================================== */
+
+/* Light mode */
+:root {
+	/* Colors */
+	--text: #000;
+	--background: #fff;
+	--accent1: #333;
+	--accent2: #666;
+	
+	/* Links */
+	--link: #1565C0;
+	--link_visited: #1565C0;
+	
+	/* UI Elements */
+	--code: #e3e3e3;
+	--button-text: #fff;
+	--mark: #FFFF99;
+	--field: #fffee0;
+	
+	/* Content Blocks */
+	--blockquote: #F2F2F2;
+	--blockquote-border: #1565C0;
+	--aside: #e0f7fa;
+	--aside-border: #0097a7;
+	--note: #e8f5e9;
+	--note-border: #d5e1d6;
+	--alert: #ffebee;
+	--alert-border: #d32f2f;
+	
+	/* Special */
+	--audio-link: #d32f2f;
+	
+	/* Spacing & Sizing */
+	--radius-default: 5px;
+	--radius-round: 40px;
+	--radius-profile: 80px;
+	
+	/* Font stacks (nur verwendete) */
+	--font_system_ui: system-ui, sans-serif;
+	--font_old_style: 'Iowan Old Style', 'Palatino Linotype', 'URW Palladio L', P052, serif;
+	--font_monospace_code: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+	:root {
+		/* Colors */
+		--text: #f8f8f2;
+		--background: #282a36;
+		--accent1: #f8f8f2;
+		--accent2: #f8f8f2;
+		
+		/* Links */
+		--link: #8be9fd;
+		--link_visited: #8be9fd;
+		
+		/* UI Elements */
+		--code: #44475a;
+		--button-text: #282a36;
+		--mark: #FFFF99;
+		--field: #44475a;
+		
+		/* Content Blocks */
+		--blockquote: #44475a;
+		--blockquote-border: #8be9fd;
+		--aside: #6272a4;
+		--aside-border: #7797b7;
+		--note: #3f444a;
+		--note-border: #4f545a;
+		--alert: #ff5555;
+		--alert-border: #ff6e6e;
+		
+		/* Special */
+		--audio-link: #ff6e6e;
+	}
+}
+
+
+/* ==========================================================================
+   BASE STYLES
+   ========================================================================== */
+
+*, *::before, *::after {
+	box-sizing: border-box;
+}
+
+body {
+	max-width: 40em;
+	margin: 2em auto;
+	padding: 0 1em;
+	font-family: var(--font_system_ui);
+	font-size: 18px;
+	line-height: 1.6;
+	background-color: var(--background);
+	color: var(--text);
+}
+
+
+/* ==========================================================================
+   TYPOGRAPHY
+   ========================================================================== */
+
+h1, h2, h3 {
+	line-height: 1.2;
+}
+
+h2 {
+	margin-top: 0;
+}
+
+.p-name {
+	text-wrap: balance;
+}
+
+mark {
+	background: var(--mark);
+}
+
+
+/* ==========================================================================
+   LINKS
+   ========================================================================== */
+
+a {
+	color: var(--link);
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+a:visited {
+	color: var(--link_visited);
+}
+
+/* Suppresses underline on superscript links and footnote backrefs */
+sup a,
+.footnote-backref {
+	text-decoration: none;
+}
+
+
+/* ==========================================================================
+   LAYOUT: HEADER
+   ========================================================================== */
+
+header {
+	margin-bottom: 2em;
+}
+
+header h1 {
+	margin-top: 0.2em;
+	margin-bottom: 0.2em;
+}
+
+header h1 a,
+header h1 a:visited {
+	text-decoration: none;
+	color: var(--text);
+}
+
+header h1 a:hover {
+	color: var(--accent1);
+	text-decoration: none;
+}
+
+header p {
+	margin-top: 0;
+}
+
+img.profile_photo {
+	border-radius: var(--radius-profile);
+}
+
+
+/* ==========================================================================
+   LAYOUT: NAVIGATION
+   ========================================================================== */
+
+nav ul,
+ul.reply-buttons {
+	list-style-type: none;
+	padding: 0;
+}
+
+nav ul li,
+ul.reply-buttons li {
+	display: inline-flex;
+	align-items: center;
+	margin-inline-end: 0.2em;
+	white-space: nowrap;
+}
+
+nav a,
+a.conversation-on-mb,
+a.reply-on-mastodon,
+a.reply-by-email,
+a.read-more {
+	text-decoration: none;
+	padding: 5px 10px;
+	border: 1px solid var(--link);
+	color: var(--link);
+	border-radius: var(--radius-default);
+	font-size: 0.9em;
+}
+
+nav a:hover,
+a.conversation-on-mb:hover,
+a.reply-on-mastodon:hover,
+a.reply-by-email:hover,
+a.read-more:hover {
+	background: var(--link);
+	color: var(--button-text);
+}
+
+
+/* ==========================================================================
+   LAYOUT: FOOTER
+   ========================================================================== */
+
+footer {
+	margin-top: 2em;
+	text-align: center;
+	font-size: 15px;
+}
+
+footer .custom_footer {
+	font-size: 0.75em;
+	color: var(--accent2);
+}
+
+footer .attribution {
+	display: none;
+}
+
+footer i {
+	font-size: 1.5em;
+	padding: 0 5px;
+}
+
+footer a i:hover {
+	color: var(--text);
+}
+
+
+/* ==========================================================================
+   CONTENT: ARTICLES & POSTS
+   ========================================================================== */
+
+.post-header {
+	margin-bottom: 0;
+}
+
+span.post-date {
+	font-size: 0.8em;
+}
+
+a.post-date,
+.microblog_time a,
+.microblog_time a:visited {
+	font-size: 0.8em;
+	color: var(--link);
+	text-decoration: none;
+}
+
+.microblog_time a,
+.microblog_time a:visited {
+	color: var(--accent2);
+}
+
+a.post-date:hover {
+	text-decoration: none;
+}
+
+.e-content {
+	margin-bottom: 5em;
+	overflow-wrap: anywhere;
+}
+
+.e-content p:first-of-type,
+article p:first-of-type {
+	margin-top: 0;
+}
+
+.p-summary {
+	margin-bottom: 2em;
+}
+
+/* Post metadata */
+.post-meta {
+	color: var(--accent2);
+}
+
+.post-nav {
+	margin-top: 2.5em;
+	margin-bottom: 2.5em;
+	text-align: center;
+}
+
+.post-nav span {
+	padding: 0 5px;
+}
+
+.post-nav a:visited {
+	color: var(--link);
+}
+
+/* Post tags */
+ul.post-tags {
+	padding-inline-start: 0;
+	margin-top: -50px;
+}
+
+ul.post-tags li {
+	display: inline;
+	font-size: 0.8em;
+}
+
+/* Post list */
+ul.post-list {
+	padding-inline-start: 0;
+	list-style-type: none;
+}
+
+ul.post-list a.u-url {
+	text-decoration: none;
+}
+
+
+/* ==========================================================================
+   CONTENT: SPECIAL BLOCKS
+   ========================================================================== */
+
+/* Callout */
+.callout {
+	background: var(--code);
+	padding: 1em;
+	border-radius: var(--radius-default);
+	margin-bottom: 2em;
+}
+
+/* Reply-to indicator */
+.reply-to {
+	background: var(--code);
+	border-radius: var(--radius-default);
+	padding: 0 0.333em;
+	display: inline-block;
+	font-size: 0.8em;
+}
+
+/* Base styles for aside, note, alert */
+aside,
+.aside,
+.note,
+.alert {
+	padding: 1em;
+	border-inline-start: 4px solid;
+	border-radius: 0 var(--radius-default) var(--radius-default) 0;
+	font-size: 0.9em;
+	margin: 1em;
+}
+
+/* Blockquote with serif font */
+blockquote,
+.blockquote {
+	padding: 1em;
+	border-inline-start: 4px solid;
+	border-radius: 0 var(--radius-default) var(--radius-default) 0;
+	font-size: 1em;
+	margin: 1em;
+	background: var(--blockquote);
+	border-inline-start-color: var(--blockquote-border);
+	font-family: var(--font_old_style);
+}
+
+blockquote p:first-of-type,
+.blockquote p:first-of-type {
+	margin-top: 0;
+}
+
+blockquote p:last-of-type,
+.blockquote p:last-of-type {
+	margin-bottom: 0;
+}
+
+blockquote cite,
+.blockquote cite {
+	display: block;
+	text-align: right;
+	margin-top: 0.5em;
+	font-family: var(--font_old_style);
+	font-style: normal;
+}
+
+blockquote cite::before,
+.blockquote cite::before {
+	content: "— ";
+}
+
+/* Aside */
+aside,
+.aside {
+	background: var(--aside);
+	border-inline-start-color: var(--aside-border);
+}
+
+/* Note */
+.note {
+	background: var(--note);
+	border-inline-start-color: var(--note-border);
+	font-style: italic;
+}
+
+/* Alert with animation */
+@keyframes blinkBorder {
+	0%, 100% { border-color: var(--alert-border); }
+	50% { border-color: var(--alert); }
+}
+
+.alert {
+	background: var(--alert);
+	border-inline-start-color: var(--alert-border);
+	font-weight: bold;
+	animation: blinkBorder 2s infinite ease-in-out;
+}
+
+/* Horizontal rule */
+hr {
+	margin: 2em 0;
+	border: none;
+	text-align: center;
+}
+
+hr::before {
+	content: "•••••";
+	display: block;
+	color: var(--link);
+}
+
+
+/* ==========================================================================
+   CODE BLOCKS
+   ========================================================================== */
+
+p > code,
+li > code,
+span.tinylytics_hits,
+span.tinylytics_uptime {
+	background: var(--code);
+	padding: 2px 4px;
+	font-size: 0.9em;
+	border-radius: var(--radius-default);
+	font-family: var(--font_monospace_code);
+}
+
+.highlight {
+	font-size: 0.9em;
+	line-height: 1;
+}
+
+.highlight div {
+	border-radius: var(--radius-default);
+}
+
+pre {
+	overflow: auto;
+	padding: 1em;
+}
+
+
+/* ==========================================================================
+   FORMS & INPUTS
+   ========================================================================== */
+
+label {
+	font-weight: bold;
+}
+
+form p {
+	margin-bottom: 0;
+}
+
+input[type=text],
+input[type=password],
+input[type=email],
+input[type=url],
+input[type=tel],
+input[type=search],
+input[type=number],
+textarea {
+	padding: 10px;
+	font-size: 0.9em;
+	border: 1px solid var(--link);
+	border-radius: var(--radius-default);
+	color: var(--text);
+	display: block;
+	height: auto;
+	background: var(--field);
+	margin: 5px 0;
+	width: 100%;
+	max-width: 100%;
+}
+
+/* Search field */
+input[type=search] {
+	font-size: 1em;
+	padding: 12px 15px;
+}
+
+/* Buttons */
+button {
+	cursor: pointer;
+}
+
+input[type=submit],
+button {
+	vertical-align: baseline;
+	padding: 5px 10px;
+	font-size: 0.9em;
+	border-radius: var(--radius-default);
+	border: 1px solid var(--link);
+	background: none;
+	color: var(--link);
+	-webkit-appearance: none;
+	margin-top: 5px;
+	font-weight: normal;
+	cursor: pointer;
+}
+
+input[type=submit]:hover,
+button:hover {
+	background: var(--link);
+	color: var(--button-text);
+}
+
+
+/* ==========================================================================
+   MEDIA
+   ========================================================================== */
+
+/* Images */
+article img,
+.e-content img,
+.p-summary img {
+	width: 100%;
+	height: auto;
+	border-radius: var(--radius-default);
+}
+
+/* Video */
+video {
+	width: 100%;
+	height: auto;
+	background: var(--code);
+	border-radius: var(--radius-default);
+}
+
+/* iFrame */
+iframe {
+	max-width: 100%;
+}
+
+
+/* ==========================================================================
+   FEATURES: SEARCH
+   ========================================================================== */
+
+#search-space-info {
+	font-size: 0.9em;
+	font-style: italic;
+	margin-top: 1em;
+	text-align: center;
+	color: var(--accent2);
+}
+
+#search-results {
+	margin-top: 2em;
+}
+
+
+/* ==========================================================================
+   FEATURES: MICROBLOG
+   ========================================================================== */
+
+.microblog_conversation {
+	margin-top: 2em;
+	margin-bottom: 2em;
+}
+
+.microblog_post {
+	margin-bottom: 1em;
+	padding: 1em;
+	border: 1px solid var(--code);
+	border-radius: var(--radius-default);
+}
+
+.microblog_user {
+	font-weight: bold;
+}
+
+.microblog_user img {
+	vertical-align: middle;
+	width: 40px;
+	height: auto;
+	border-radius: var(--radius-round);
+	max-width: 40px;
+}
+
+.microblog_text img {
+	max-width: 100%;
+	border-radius: var(--radius-default);
+}
+
+.microblog_narration_button {
+	color: var(--audio-link);
+}
+
+.microblog_narration_button span {
+	vertical-align: baseline;
+}
+
+.microblog_shared_note {
+	background: red;
+	margin: 0 auto;
+	padding: 5px;
+	border-radius: var(--radius-default);
+	color: white;
+	width: fit-content;
+}
+
+.microblog_reply_textarea textarea {
+	width: calc(100% - 2em);
+	border-radius: var(--radius-default);
+	border: 1px solid var(--code);
+	padding: 1em;
+	font-size: 1em;
+}
+
+.microblog_reply_button {
+	margin-top: 0;
+}
+
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.tiny-img {
+	max-width: 25em;
+}
+
+.tiny-text {
+	font-size: 0.6em;
+}

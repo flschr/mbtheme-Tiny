@@ -1,3 +1,28 @@
 {
-	"paginate": 20
+  "paginate": 8,
+  "enableRobotsTXT": true,
+
+  "mediaTypes": {
+    "application/feed+json": {
+      "suffixes": ["json"]
+    }
+  },
+
+  "outputFormats": {
+    "JSONFeed": {
+      "name": "JSONFeed",
+      "mediaType": "application/feed+json",
+      "baseName": "feed",
+      "isPlainText": false,
+      "isHTML": false,
+      "rel": "alternate",
+      "noUgly": true
+    }
+  },
+
+  "outputs": {
+    "home": ["HTML", "RSS", "JSONFeed"]
+  },
+
+  "taxonomies": { "tag": "tags" }
 }
