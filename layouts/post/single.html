@@ -44,6 +44,9 @@
   {{ partial "microhook-after-post.html" . }}
   {{ end }}
 
+  <button class="tinylytics_kudos"></button>
+
+
 </div>
 {{ if or (templates.Exists "partials/reply-by-email.html") (templates.Exists "partials/conversation-link.html") (templates.Exists "partials/plugin_tinylytics.html") (templates.Exists "partials/reply-on-mastodon.html") (templates.Exists "partials/microhook-share-button.html")}}
 <ul class="reply-buttons">
