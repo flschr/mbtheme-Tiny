@@ -26,7 +26,7 @@
         {{ .Content }}
   </article>
 
-  {{ if templates.Exists "partials/microhook-categories.html" }}
+  <!-- {{ if templates.Exists "partials/microhook-categories.html" }}
   {{ partial "microhook-categories.html" . }}
   {{ else }}
   {{ if .Params.categories }}
@@ -38,7 +38,7 @@
     </ul>
   {{ end }}
   {{ end }}
-  {{ end }}
+  {{ end }}-->
 
   {{ if templates.Exists "partials/microhook-after-post.html" }}
   {{ partial "microhook-after-post.html" . }}
@@ -58,9 +58,6 @@
   {{ end }}
   {{ if templates.Exists "partials/reply-on-mastodon.html" }}
   <li>{{ partial "reply-on-mastodon.html" . }}</li>
-  {{ end }}
-  {{ if templates.Exists "partials/microhook-share-button.html" }}
-  {{ partial "microhook-share-button.html" . }}
   {{ end }}
 </ul>
   {{ end }}
