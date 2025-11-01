@@ -584,12 +584,30 @@
             img.classList.remove('lqip');
           }, { once:true });
         }
+
+        // Berechne Distanz eines Elements zum Viewport-Center
+        function getViewportDistance(element) {
+          const rect = element.getBoundingClientRect();
+          const viewportCenter = window.innerHeight / 2;
+          const elementCenter = rect.top + rect.height / 2;
+          return Math.abs(elementCenter - viewportCenter);
+        }
+
         function hydrateVisibleImages(){
-          const visibleLazy = grid.querySelectorAll('.photo-tile:not(.hidden) img[data-src]');
-          visibleLazy.forEach(img => {
-            const rect = img.getBoundingClientRect();
-            if (rect.top < window.innerHeight * 1.2 && rect.bottom > -200) activateImg(img);
-          });
+          const visibleLazy = Array.from(grid.querySelectorAll('.photo-tile:not(.hidden) img[data-src]'));
+
+          // Sortiere Bilder nach Distanz zum Viewport-Center (nähere zuerst)
+          const prioritized = visibleLazy
+            .map(img => ({
+              img,
+              rect: img.getBoundingClientRect(),
+              distance: getViewportDistance(img)
+            }))
+            .filter(item => item.rect.top < window.innerHeight * 1.2 && item.rect.bottom > -200)
+            .sort((a, b) => a.distance - b.distance);
+
+          // Lade Bilder in priorisierter Reihenfolge (nähere zuerst)
+          prioritized.forEach(item => activateImg(item.img));
         }
         if ('IntersectionObserver' in window) {
           const io = new IntersectionObserver((entries)=>{
@@ -771,14 +789,18 @@
           const velocityFactor = Math.min(5, Math.ceil(velocity / VELOCITY_THRESHOLD));
           const tilesToPreload = estimatedTilesPerViewport * velocityFactor;
 
+          // Sammle alle relevanten Bilder
+          let tilesToLoad = [];
+
           if (scrollingDown) {
-            // Nach unten scrollen: Lade Bilder unterhalb des aktuellen Bereichs
+            // Nach unten scrollen: Sammle Bilder unterhalb des aktuellen Bereichs
             const currentBottomIndex = visibleRange.end;
             const preloadEnd = Math.min(allTiles.length, currentBottomIndex + tilesToPreload);
 
             for (let i = currentBottomIndex; i < preloadEnd; i++) {
-              const img = allTiles[i]?.querySelector('img[data-src]');
-              if (img) activateImg(img);
+              const tile = allTiles[i];
+              const img = tile?.querySelector('img[data-src]');
+              if (img) tilesToLoad.push({ tile, img });
             }
 
             // Erweitere auch den sichtbaren Bereich
@@ -787,13 +809,14 @@
               applyVisibility();
             }
           } else {
-            // Nach oben scrollen: Lade Bilder oberhalb des aktuellen Bereichs
+            // Nach oben scrollen: Sammle Bilder oberhalb des aktuellen Bereichs
             const currentTopIndex = visibleRange.start;
             const preloadStart = Math.max(0, currentTopIndex - tilesToPreload);
 
             for (let i = preloadStart; i < currentTopIndex; i++) {
-              const img = allTiles[i]?.querySelector('img[data-src]');
-              if (img) activateImg(img);
+              const tile = allTiles[i];
+              const img = tile?.querySelector('img[data-src]');
+              if (img) tilesToLoad.push({ tile, img });
             }
 
             // Erweitere auch den sichtbaren Bereich
@@ -802,6 +825,12 @@
               applyVisibility();
             }
           }
+
+          // Sortiere nach Viewport-Nähe und lade
+          tilesToLoad
+            .map(item => ({ ...item, distance: getViewportDistance(item.tile) }))
+            .sort((a, b) => a.distance - b.distance)
+            .forEach(item => activateImg(item.img));
         }
 
         // Zentrale Scroll-Update Funktion
