@@ -15,23 +15,25 @@
       <script type="text/javascript" src="https://micro.blog/narration.js?url={{ . }}"></script>
     {{ end }}
     {{ end }}
-    {{ if .Title }}
+{{- $hideTitle  := .Params.hideTitle  | default false -}}
+{{- $forceTitle := .Params.forceTitle | default false -}}
+{{ if .Title }}
     <h2 class="p-name">{{ .Title }}</h2>
     {{ end }}
   </header>
 
   <article class="post-content e-content">
-    {{ .Content }}
+        {{ .Content }}
   </article>
 
-  {{ if templates.Exists "partials/microhook-categories.html" }}
+  <!-- {{ if templates.Exists "partials/microhook-categories.html" }}
   {{ partial "microhook-categories.html" . }}
   {{ else }}
-  {{- if .Params.categories }}
-  {{- with .GetTerms "categories" }}
+  {{ if .Params.categories }}
+  {{ with .GetTerms "categories" }}
     <ul class="post-tags">
-      {{- range . }}
-        <li><a href="{{ .RelPermalink }}" class="category">{{ .LinkTitle }}</a></li>
+      {{ range . }}
+        <li><a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></li>
       {{ end }}
     </ul>
   {{ end }}
@@ -40,14 +42,11 @@
 
   {{ if templates.Exists "partials/microhook-after-post.html" }}
   {{ partial "microhook-after-post.html" . }}
-  {{ end }}
+  {{ end }}-->
 
 </div>
 {{ if or (templates.Exists "partials/reply-by-email.html") (templates.Exists "partials/conversation-link.html") (templates.Exists "partials/plugin_tinylytics.html") (templates.Exists "partials/reply-on-mastodon.html") (templates.Exists "partials/microhook-share-button.html")}}
 <ul class="reply-buttons">
-  {{ if templates.Exists "partials/plugin_tinylytics.html" }}
-  <li><button class="tinylytics_kudos">Kudos</button></li>
-  {{ end }}
   {{ if templates.Exists "partials/reply-by-email.html" }}
   <li>{{ partial "reply-by-email.html" . }}</li>
   {{ end }}
@@ -56,9 +55,6 @@
   {{ end }}
   {{ if templates.Exists "partials/reply-on-mastodon.html" }}
   <li>{{ partial "reply-on-mastodon.html" . }}</li>
-  {{ end }}
-  {{ if templates.Exists "partials/microhook-share-button.html" }}
-  {{ partial "microhook-share-button.html" . }}
   {{ end }}
 </ul>
   {{ end }}

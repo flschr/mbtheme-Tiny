@@ -1,0 +1,107 @@
+{{/* 
+  schema_org.html — JSON-LD für fischr.org
+  - Erzeugt je Seite genau EIN Snippet:
+      * Blog  (nur Startseite)
+      * BlogPosting (Posts) oder WebPage (statische Seiten)
+      * BreadcrumbList (außer auf Home)
+  - Bildlogik (Fallback-Kaskade):
+      hero* Resource → erstes Page-Image → erstes .Params.photos → .Site.Params.default_image
+  - Sprache: fallback "de"
+  - Einbinden im <head> via: {{ partial "schema_org.html" . }}
+*/}}
+
+{{- $iso := "2006-01-02T15:04:05-07:00" -}}
+{{- $lang := .Site.Language.Lang | default "de" -}}
+{{- $authorName := .Site.Author.name | default .Site.Title -}}
+{{- $authorURL  := .Site.Author.url  | default .Site.BaseURL -}}
+{{- $authorURLAbs := $authorURL | absURL -}}
+
+{{/* Bild finden (absolute URL sicherstellen) */}}
+{{- $img := "" -}}
+{{- with .Resources.GetMatch "hero*" }}{{ $img = .Permalink }}{{ end -}}
+{{- if not $img }}{{ with (index (.Resources.ByType "image") 0) }}{{ $img = .Permalink }}{{ end }}{{ end -}}
+{{- if not $img }}{{ with .Params.photos }}{{ if gt (len .) 0 }}{{ $img = (index . 0) | absURL }}{{ end }}{{ end }}{{ end -}}
+{{- if not $img }}{{ with .Site.Params.default_image }}{{ $img = . | absURL }}{{ end }}{{ end -}}
+
+{{/* 1) Blog (nur Startseite) ODER BlogPosting/WebPage */}}
+{{- if .IsHome -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": {{ printf "%q" .Site.Title }},
+  "url": {{ printf "%q" .Site.BaseURL }},
+  "inLanguage": {{ printf "%q" $lang }},
+  "description": {{ printf "%q" (.Site.Params.description | default .Site.Title) }},
+  "publisher": {
+    "@type": "Organization",
+    "name": {{ printf "%q" .Site.Title }},
+    "url": {{ printf "%q" .Site.BaseURL }}
+  }
+}
+</script>
+{{- else -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": {{ if or (eq .Type "post") (in (slice "post" "posts" "blog" "micro" "microblog") .Section) }} "BlogPosting" {{ else }} "WebPage" {{ end }},
+  "@id": {{ printf "%q" .Permalink }},
+  "mainEntityOfPage": { "@type": "WebPage", "@id": {{ printf "%q" .Permalink }} },
+  "headline": {{ printf "%q" (.Title | plainify) }},
+  {{- with .Description }}
+  "description": {{ printf "%q" (. | plainify) }},
+  {{- else }}
+  "description": {{ printf "%q" (.Summary | plainify | truncate 160) }},
+  {{- end }}
+  {{- if $img }}
+  "image": [ {{ printf "%q" $img }} ],
+  {{- end }}
+  {{- with .Date }} "datePublished": {{ printf "%q" (.Format $iso) }}, {{ end -}}
+  {{- with .Lastmod }} "dateModified": {{ printf "%q" (.Format $iso) }}, {{ end -}}
+  "inLanguage": {{ printf "%q" $lang }},
+  "url": {{ printf "%q" .Permalink }},
+  "author": { "@type": "Person", "name": {{ printf "%q" $authorName }}, "url": {{ printf "%q" $authorURLAbs }} },
+  "publisher": { "@type": "Organization", "name": {{ printf "%q" .Site.Title }}, "url": {{ printf "%q" .Site.BaseURL }} }
+  {{- with .GetTerms "categories" -}}
+  , "articleSection": {{ printf "%q" (index . 0).LinkTitle }},
+    "keywords": [{{ range $i,$t := . }}{{ if $i }}, {{ end }}{{ printf "%q" $t.LinkTitle }}{{ end }}]
+  {{- end }}
+  {{- with .WordCount -}}, "wordCount": {{ . }}{{- end }}
+}
+</script>
+{{- end -}}
+
+{{/* 2) Breadcrumbs (nicht auf Home) */}}
+{{- if not .IsHome -}}
+{{- $home := "/" | absURL -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": { "@id": {{ printf "%q" $home }} }
+    }
+    {{- if .CurrentSection }}
+    ,{
+      "@type": "ListItem",
+      "position": 2,
+      "name": {{ printf "%q" (.CurrentSection.Title | plainify) }},
+      "item": { "@id": {{ printf "%q" .CurrentSection.Permalink }} }
+    }
+    {{- end }}
+    {{- if .IsPage }}
+    ,{
+      "@type": "ListItem",
+      "position": {{ if .CurrentSection }}3{{ else }}2{{ end }},
+      "name": {{ printf "%q" (.Title | plainify) }},
+      "item": { "@id": {{ printf "%q" .Permalink }} }
+    }
+    {{- end }}
+  ]
+}
+</script>
+{{- end -}}
