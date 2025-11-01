@@ -62,6 +62,9 @@
       opacity: 0; /* wird durch .ready aufgehoben */
       border-radius: var(--tile-border-radius);
       content-visibility: auto;
+
+      /* Fix: Intrinsische Größe für korrekte Lazy-Activation auch bei Sprüngen */
+      contain-intrinsic-size: 220px 220px;
     }
     .photo-tile.ready{ opacity: 1; }
     .photo-tile.hidden{ display: none; }
@@ -621,28 +624,41 @@
             }
           }
 
-          // Fallback: Wenn keine Tiles gefunden, erweitere Suche
+          // Robuster Fallback: Binäre Suche wenn keine Tiles gefunden
           if (tilesInView.length === 0) {
-            for (let i = 0; i < allTiles.length; i += 10) { // Sample every 10th tile
-              const tile = allTiles[i];
-              const rect = tile.getBoundingClientRect();
-              if (rect.bottom > viewportTop - bufferZone && rect.top < viewportBottom + bufferZone) {
-                // Gefunden - jetzt den genauen Bereich suchen
-                const start = Math.max(0, i - 50);
-                const end = Math.min(allTiles.length, i + 200);
-                for (let j = start; j < end; j++) {
-                  const t = allTiles[j];
-                  const r = t.getBoundingClientRect();
-                  if (r.bottom > viewportTop - bufferZone && r.top < viewportBottom + bufferZone) {
-                    tilesInView.push({
-                      tile: t,
-                      index: j,
-                      rect: r,
-                      distance: getViewportDistance(t)
-                    });
-                  }
+            // Binäre Suche nach erstem sichtbaren Tile
+            let left = 0;
+            let right = allTiles.length - 1;
+            let firstVisible = -1;
+
+            while (left <= right) {
+              const mid = Math.floor((left + right) / 2);
+              const rect = allTiles[mid].getBoundingClientRect();
+
+              if (rect.bottom > viewportTop - bufferZone) {
+                firstVisible = mid;
+                right = mid - 1; // Suche weiter links
+              } else {
+                left = mid + 1; // Suche rechts
+              }
+            }
+
+            // Wenn gefunden, sammle alle sichtbaren Tiles in der Nähe
+            if (firstVisible !== -1) {
+              const scanStart = Math.max(0, firstVisible - 100);
+              const scanEnd = Math.min(allTiles.length, firstVisible + 300);
+
+              for (let j = scanStart; j < scanEnd; j++) {
+                const t = allTiles[j];
+                const r = t.getBoundingClientRect();
+                if (r.bottom > viewportTop - bufferZone && r.top < viewportBottom + bufferZone) {
+                  tilesInView.push({
+                    tile: t,
+                    index: j,
+                    rect: r,
+                    distance: getViewportDistance(t)
+                  });
                 }
-                break;
               }
             }
           }
@@ -654,7 +670,17 @@
         function updateVisibleRangeFromViewport() {
           const tilesInView = getTilesInViewport(2);
 
-          if (tilesInView.length === 0) return;
+          if (tilesInView.length === 0) {
+            // Garantierter Fallback: Schätze Position basierend auf Scroll-Verhältnis
+            const scrollRatio = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            const estimatedIndex = Math.floor(scrollRatio * allTiles.length);
+            const safeIndex = Math.max(0, Math.min(allTiles.length - 1, estimatedIndex));
+
+            // Setze einen großzügigen Bereich um die geschätzte Position
+            visibleRange.start = Math.max(0, safeIndex - BATCH_SIZE * 3);
+            visibleRange.end = Math.min(allTiles.length, safeIndex + BATCH_SIZE * 5);
+            return;
+          }
 
           // Finde minimalen und maximalen Index
           const indices = tilesInView.map(t => t.index);
