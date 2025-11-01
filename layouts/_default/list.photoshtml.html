@@ -531,6 +531,21 @@
           visibleRange.end = Math.min(allTiles.length, index + JUMP_BUFFER_AFTER);
 
           applyVisibility();
+
+          // SOFORT Bilder im Zielbereich aktivieren, bevor wir scrollen
+          // Dadurch starten sie mit dem Laden, während wir scrollen
+          const viewportHeight = window.innerHeight;
+          const estimatedTilesPerViewport = Math.ceil(viewportHeight / 140); // ~140px = min tile size
+          const tilesToPreload = estimatedTilesPerViewport * 3; // 3 Viewports vorladen
+
+          const preloadStart = Math.max(visibleRange.start, index);
+          const preloadEnd = Math.min(visibleRange.end, index + tilesToPreload);
+
+          for (let i = preloadStart; i < preloadEnd; i++) {
+            const img = allTiles[i]?.querySelector('img[data-src]');
+            if (img) activateImg(img);
+          }
+
           await new Promise(r => requestAnimationFrame(r));
 
           // Prefetch für smooth scrolling
