@@ -4,46 +4,81 @@
     :root{
       --safe-top: env(safe-area-inset-top, 0px);
       --badge-margin: 0.9rem;
+      --grid-gap-desktop: 4px;
+      --grid-gap-tablet: 3px;
+      --grid-gap-mobile: 2px;
+      --grid-min-tile-size: 140px;
+      --grid-max-width: 1200px;
+      --tile-border-radius: 4px;
+      --transition-fast: 0.18s ease;
+      --transition-normal: 0.25s ease;
+      --transition-slow: 0.35s ease;
     }
 
     .photos.content{
       overscroll-behavior-y: contain;
       -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .photos.content{ scroll-behavior: auto; }
     }
 
-    /* ====== Grid ====== */
-    .photo-grid-wrapper{ min-height: 60vh; position: relative; }
-    .photo-grid{
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap:4px;
-      max-width:1200px;
-      margin:0 auto;
+    /* ====== Grid mit Container Query Support ====== */
+    .photo-grid-wrapper{
+      min-height: 60vh;
+      position: relative;
+      container-type: inline-size;
+      container-name: photo-grid-wrapper;
     }
-    @media (max-width:768px){ .photo-grid{ gap:3px; } }
-    @media (max-width:480px){ .photo-grid{ gap:2px; } }
+    .photo-grid{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-tile-size), 1fr));
+      gap: var(--grid-gap-desktop);
+      max-width: var(--grid-max-width);
+      margin: 0 auto;
+    }
+
+    /* Fallback für ältere Browser */
+    @media (max-width: 768px){ .photo-grid{ gap: var(--grid-gap-tablet); } }
+    @media (max-width: 480px){ .photo-grid{ gap: var(--grid-gap-mobile); } }
+
+    /* Container Queries (progressive enhancement) */
+    @container photo-grid-wrapper (max-width: 768px) {
+      .photo-grid{ gap: var(--grid-gap-tablet); }
+    }
+    @container photo-grid-wrapper (max-width: 480px) {
+      .photo-grid{ gap: var(--grid-gap-mobile); }
+    }
 
     /* ====== Tiles ====== */
     .photo-tile{
-      position:relative;
-      aspect-ratio:1;
-      overflow:hidden;
-      background:#f3f4f6;
-      cursor:pointer;
-      transition: opacity .25s ease, transform .1s ease, box-shadow .18s ease;
-      opacity:0; /* wird durch .ready aufgehoben */
-      border-radius:4px;
+      position: relative;
+      aspect-ratio: 1;
+      overflow: hidden;
+      background: #f3f4f6;
+      cursor: pointer;
+      transition: opacity var(--transition-normal), transform 0.1s ease, box-shadow var(--transition-fast);
+      opacity: 0; /* wird durch .ready aufgehoben */
+      border-radius: var(--tile-border-radius);
+      content-visibility: auto;
     }
-    .photo-tile.ready{ opacity:1; }
-    .photo-tile.hidden{ display:none; }
-    .photo-tile:active{ transform:scale(.99); }
+    .photo-tile.ready{ opacity: 1; }
+    .photo-tile.hidden{ display: none; }
+    .photo-tile:active{ transform: scale(0.99); }
 
     .photo-tile img{
-      width:100%; height:100%; object-fit:cover; display:block;
-      transition: filter .35s ease, transform .35s ease, opacity .35s ease;
-      will-change: filter, transform, opacity;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: filter var(--transition-slow), transform var(--transition-slow), opacity var(--transition-slow);
     }
-    .photo-tile img.lqip{ filter: blur(12px); transform: scale(1.03); opacity:.9; }
+    .photo-tile img.lqip{
+      filter: blur(12px);
+      transform: scale(1.03);
+      opacity: 0.9;
+    }
 
     /* ====== Pill Basis ====== */
     .pill{
@@ -141,34 +176,44 @@
 
     /* Mini-Datum oben rechts – Hover/Fokus (Desktop) / Tap (Mobile) */
     .photo-tile .date-badge{
-      position:absolute; top:.5rem; right:.5rem;
-      padding:.28rem .5rem;
-      font-size:.75rem; line-height:1;
-      color:#fff;
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      padding: 0.28rem 0.5rem;
+      font-size: 0.75rem;
+      line-height: 1;
+      color: #fff;
       background: rgba(0,0,0,.55);
-      border:1px solid rgba(255,255,255,.15);
-      border-radius:.6rem;
-      box-shadow:0 2px 10px rgba(0,0,0,.18);
-      opacity:0; transform: translateY(-3px);
-      transition: opacity .18s ease, transform .18s ease;
-      pointer-events:none;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 0.6rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,.18);
+      opacity: 0;
+      transform: translateY(-3px);
+      transition: opacity var(--transition-fast), transform var(--transition-fast);
+      pointer-events: none;
     }
     .photo-tile:hover .date-badge,
-    .photo-tile:focus-visible .date-badge{ opacity:1; transform: translateY(0); }
+    .photo-tile:focus-visible .date-badge{
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     #infiniteSentinel{ height:2px; }
   </style>
 
   <div class="photo-grid-wrapper">
     <!-- Datumspille -->
-    <button id="monthBadge" class="month-badge pill" aria-live="polite" title="Jahre anzeigen"></button>
+    <button id="monthBadge" class="month-badge pill"
+            aria-live="polite"
+            aria-label="Aktueller Monat und Jahr. Klicken um Jahresübersicht zu öffnen"
+            title="Jahre anzeigen"></button>
 
     <!-- Year Rail -->
-    <div id="yearRail" class="year-rail" aria-hidden="true">
+    <nav id="yearRail" class="year-rail" aria-hidden="true" aria-label="Jahresnavigation">
       <div class="year-rail-strip">
         <div class="year-row" id="yearRow" role="tablist" aria-label="Jahresauswahl"></div>
       </div>
-    </div>
+    </nav>
 
     <section class="photo-grid" id="photoGrid">
       {{ $pages := sort (where .Site.RegularPages "Type" "in" (slice "post" "photo")) "Date" "desc" }}
@@ -176,66 +221,30 @@
 
       {{ range $p := $pages }}
         {{ $dateFormatted := $p.Date.Format "2. January 2006" }}
+        {{ $dateISO := $p.Date.Format "2006-01-02" }}
         {{ $year := $p.Date.Format "2006" }}
         {{ $overlayCaption := "" }}
         {{ with $p.Title }}{{ $overlayCaption = . | plainify | truncate 80 }}{{ end }}
 
         {{ with $p.Params.photos }}
           {{ range $i, $url := . }}
-            {{ $caption := $overlayCaption }}
             {{ $eager := lt $imageIndex 12 }}
             {{ $isMBPhotos := or (hasPrefix $url "https://micro.blog/photos/") (hasPrefix $url "http://micro.blog/photos/") }}
-            {{ $src300 := "" }}{{ $src600 := "" }}{{ $srcFull := "" }}
+            {{ $src300 := "" }}{{ $src600 := "" }}{{ $srcFull := "" }}{{ $tiny := "" }}
             {{ if $isMBPhotos }}
               {{ $src300 = replaceRE `/photos/[^/]+/` "/photos/200x/" $url }}
               {{ $src600 = replaceRE `/photos/[^/]+/` "/photos/400x/" $url }}
+              {{ $tiny = replaceRE `/photos/[^/]+/` "/photos/40x/" $url }}
               {{ $srcFull = $url }}
             {{ else }}
               {{ $encoded := $url | urlquery }}
               {{ $src300 = printf "https://micro.blog/photos/200x/%s" $encoded }}
               {{ $src600 = printf "https://micro.blog/photos/400x/%s" $encoded }}
+              {{ $tiny = printf "https://micro.blog/photos/40x/%s" $encoded }}
               {{ $srcFull = $url }}
             {{ end }}
 
-            <div class="photo-tile {{ if $eager }}ready{{ end }}"
-                 role="link" tabindex="0"
-                 aria-label="{{ if $caption }}{{ $caption }} – {{ $dateFormatted }}{{ else }}{{ $dateFormatted }}{{ end }}"
-                 data-index="{{ $imageIndex }}"
-                 data-year="{{ $year }}"
-                 data-date-iso="{{ $p.Date.Format "2006-01-02" }}"
-                 data-src-full="{{ $srcFull }}"
-                 {{ if $caption }}data-caption="{{ $caption }}" data-has-caption="1"{{ end }}
-                 data-date="{{ $dateFormatted }}"
-                 data-url="{{ $p.RelPermalink }}">
-              {{ if $eager }}
-                <img
-                  decoding="async"
-                  fetchpriority="{{ if lt $imageIndex 6 }}high{{ else }}auto{{ end }}"
-                  src="{{ $src300 }}"
-                  srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
-                  sizes="(max-width: 768px) 50vw, 33vw"
-                  alt="{{ if $caption }}{{ $caption }}{{ else }}{{ $dateFormatted }}{{ end }}">
-              {{ else }}
-                {{ $tiny := "" }}
-                {{ if $isMBPhotos }}
-                  {{ $tiny = replaceRE `/photos/[^/]+/` "/photos/40x/" $url }}
-                {{ else }}
-                  {{ $encoded2 := $url | urlquery }}
-                  {{ $tiny = printf "https://micro.blog/photos/40x/%s" $encoded2 }}
-                {{ end }}
-                <img
-                  class="lqip"
-                  decoding="async"
-                  loading="lazy"
-                  src="{{ $tiny }}"
-                  data-src="{{ $src300 }}"
-                  data-srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
-                  data-sizes="(max-width: 768px) 50vw, 33vw"
-                  alt="{{ if $caption }}{{ $caption }}{{ else }}{{ $dateFormatted }}{{ end }}">
-              {{ end }}
-
-              <span class="date-badge" aria-hidden="true"></span>
-            </div>
+            {{ partial "photo-tile.html" (dict "srcFull" $srcFull "src300" $src300 "src600" $src600 "tiny" $tiny "caption" $overlayCaption "dateFormatted" $dateFormatted "dateISO" $dateISO "year" $year "permalink" $p.RelPermalink "index" $imageIndex "eager" $eager) }}
             {{ $imageIndex = add $imageIndex 1 }}
           {{ end }}
         {{ end }}
@@ -246,42 +255,10 @@
           {{ if not (or (hasPrefix $name "hero") (in $name "og-") (in $name "open-graph") (in $name "social") (in $name "thumb")) }}
             {{ $w300 := $img.Fit "200x200 q85" }}
             {{ $w600 := $img.Fit "400x400 q85" }}
-            {{ $caption := $overlayCaption }}
+            {{ $w40 := $img.Fit "40x40 q50" }}
             {{ $eager := lt $imageIndex 12 }}
 
-            <div class="photo-tile {{ if $eager }}ready{{ end }}"
-                 role="link" tabindex="0"
-                 aria-label="{{ if $caption }}{{ $caption }} – {{ $dateFormatted }}{{ else }}{{ $dateFormatted }}{{ end }}"
-                 data-index="{{ $imageIndex }}"
-                 data-year="{{ $year }}"
-                 data-date-iso="{{ $p.Date.Format "2006-01-02" }}"
-                 data-src-full="{{ $img.RelPermalink }}"
-                 {{ if $caption }}data-caption="{{ $caption }}" data-has-caption="1"{{ end }}
-                 data-date="{{ $dateFormatted }}"
-                 data-url="{{ $p.RelPermalink }}">
-              {{ if $eager }}
-                <img
-                  decoding="async"
-                  fetchpriority="{{ if lt $imageIndex 6 }}high{{ else }}auto{{ end }}"
-                  src="{{ $w300.RelPermalink }}"
-                  srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
-                  sizes="(max-width: 768px) 50vw, 33vw"
-                  alt="{{ if $caption }}{{ $caption }}{{ else }}{{ $dateFormatted }}{{ end }}">
-              {{ else }}
-                {{ $w40 := $img.Fit "40x40 q50" }}
-                <img
-                  class="lqip"
-                  decoding="async"
-                  loading="lazy"
-                  src="{{ $w40.RelPermalink }}"
-                  data-src="{{ $w300.RelPermalink }}"
-                  data-srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
-                  data-sizes="(max-width: 768px) 50vw, 33vw"
-                  alt="{{ if $caption }}{{ $caption }}{{ else }}{{ $dateFormatted }}{{ end }}">
-              {{ end }}
-
-              <span class="date-badge" aria-hidden="true"></span>
-            </div>
+            {{ partial "photo-tile.html" (dict "srcFull" $img.RelPermalink "src300" $w300.RelPermalink "src600" $w600.RelPermalink "tiny" $w40.RelPermalink "caption" $overlayCaption "dateFormatted" $dateFormatted "dateISO" $dateISO "year" $year "permalink" $p.RelPermalink "index" $imageIndex "eager" $eager) }}
             {{ $imageIndex = add $imageIndex 1 }}
           {{ end }}
         {{ end }}
@@ -294,6 +271,22 @@
   <script>
     (function () {
       try {
+        // ====== Performance-Konstanten ======
+        const INITIAL_LOAD_COUNT = 36;
+        const BATCH_SIZE = 36;
+        const PREFETCH_AHEAD = 24;
+        const INTERSECTION_ROOT_MARGIN = '1000px 0px';
+        const SENTINEL_ROOT_MARGIN = '1200px 0px';
+        const NEAR_BOTTOM_THRESHOLD = 900;
+        const SCROLL_THROTTLE_MS = 180;
+        const MOBILE_SCROLL_DEBOUNCE_MS = 160;
+        const SCROLL_IDLE_UNLOCK_MS = 250;
+        const CLAMP_THROTTLE_MS = 80;
+        const CLAMP_TICK_TIMEOUT_MS = 120;
+        const BADGE_HIDE_TIMEOUT_MS = 3000;
+        const CLICK_SUPPRESS_MS = 450;
+
+        // ====== DOM-Referenzen ======
         const grid        = document.getElementById('photoGrid');
         if (!grid) return;
 
@@ -311,9 +304,13 @@
 
         const years = Array.from(new Set(allTiles.map(t => t.dataset.year))).filter(Boolean).sort((a,b)=> b.localeCompare(a));
 
-        let visibleCount   = Math.max(36, Math.min(allTiles.length, 36));
-        const batchSize    = 36;
-        const prefetchAhead= 24;
+        let visibleCount   = Math.max(INITIAL_LOAD_COUNT, Math.min(allTiles.length, INITIAL_LOAD_COUNT));
+        const batchSize    = BATCH_SIZE;
+        const prefetchAhead= PREFETCH_AHEAD;
+
+        // requestIdleCallback Polyfill/Wrapper
+        const scheduleIdleTask = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
+        const cancelIdleTask = window.cancelIdleCallback || clearTimeout;
 
         /* ====== Date-badges einmalig befüllen ====== */
         function hydrateDateBadges(){
@@ -326,23 +323,32 @@
           });
         }
 
-        /* ====== URL-Sync ====== */
+        /* ====== URL-Sync (mit requestIdleCallback) ====== */
         let isProgrammaticScroll = false;
         let lastURLYear = null;
         let scrollIdleTimer = null;
+        let urlSyncIdleTask = null;
+
         function syncURLToCurrentYear(){
           if (isProgrammaticScroll) return;
           const { year } = getCurrent();
           if (!year || year === lastURLYear) return;
-          const url = new URL(location.href);
-          url.searchParams.set('year', year);
-          history.replaceState(null, '', url);
-          lastURLYear = year;
+
+          // URL-Update im Idle ausführen
+          if (urlSyncIdleTask) cancelIdleTask(urlSyncIdleTask);
+          urlSyncIdleTask = scheduleIdleTask(() => {
+            const url = new URL(location.href);
+            url.searchParams.set('year', year);
+            history.replaceState(null, '', url);
+            lastURLYear = year;
+            urlSyncIdleTask = null;
+          });
         }
+
         function scheduleUnlockAfterScrollIdle(){
           if (!isProgrammaticScroll) return;
           if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
-          scrollIdleTimer = setTimeout(()=>{ isProgrammaticScroll = false; syncURLToCurrentYear(); }, 250);
+          scrollIdleTimer = setTimeout(()=>{ isProgrammaticScroll = false; syncURLToCurrentYear(); }, SCROLL_IDLE_UNLOCK_MS);
         }
 
         /* ====== Sichtbarkeit ====== */
@@ -357,16 +363,22 @@
             .forEach(img => { img.closest('.photo-tile')?.classList.add('ready'); });
         }
 
+        let prefetchIdleTask = null;
         function prefetchNext(){
-          const start = visibleCount;
-          const end   = Math.min(allTiles.length, visibleCount + prefetchAhead);
-          for (let i = start; i < end; i++) {
-            const img = allTiles[i]?.querySelector('img');
-            if (img && img.dataset && !img.dataset.activated) {
-              if (img.dataset.sizes && !img.sizes) img.sizes = img.dataset.sizes;
-              if (img.dataset.srcset && !img.srcset) img.srcset = img.dataset.srcset;
+          if (prefetchIdleTask) cancelIdleTask(prefetchIdleTask);
+
+          prefetchIdleTask = scheduleIdleTask(() => {
+            const start = visibleCount;
+            const end   = Math.min(allTiles.length, visibleCount + prefetchAhead);
+            for (let i = start; i < end; i++) {
+              const img = allTiles[i]?.querySelector('img');
+              if (img && img.dataset && !img.dataset.activated) {
+                if (img.dataset.sizes && !img.sizes) img.sizes = img.dataset.sizes;
+                if (img.dataset.srcset && !img.srcset) img.srcset = img.dataset.srcset;
+              }
             }
-          }
+            prefetchIdleTask = null;
+          });
         }
 
         function loadMore() {
@@ -546,7 +558,7 @@
             entries.forEach(entry=>{
               if (entry.isIntersecting) activateImg(entry.target);
             });
-          }, { rootMargin:'1000px 0px' });
+          }, { rootMargin: INTERSECTION_ROOT_MARGIN });
           grid.querySelectorAll('img[data-src]').forEach(img => io.observe(img));
         }
 
@@ -558,22 +570,13 @@
               requestAnimationFrame(()=> loadMore());
             }
           }
-        }, { rootMargin:'1200px 0px' });
+        }, { rootMargin: SENTINEL_ROOT_MARGIN });
         sentinelIO.observe(sentinel);
 
-        function nearBottom(px = 1000){
+        function nearBottom(px = NEAR_BOTTOM_THRESHOLD){
           const doc = document.documentElement;
           return (window.innerHeight + window.scrollY) >= (doc.scrollHeight - px);
         }
-        let bottomThrottle = false;
-        window.addEventListener('scroll', () => {
-          if (bottomThrottle) return;
-          if (nearBottom(900)) {
-            bottomThrottle = true;
-            loadMore();
-            setTimeout(()=> bottomThrottle = false, 180);
-          }
-        }, { passive:true });
 
         /* ====== Navigation-Handler ====== */
         function go(tile){
@@ -582,8 +585,10 @@
         }
         const isTouch = 'ontouchstart' in window;
 
-        // Desktop: Klick + Tastatur
+        // Desktop: Klick + Tastatur mit Pfeiltasten-Navigation
         if (!isTouch) {
+          const GRID_COLS = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+
           allTiles.forEach(tile => {
             tile.addEventListener('click', (e)=> {
               if (tile._suppressNextClick) {
@@ -593,59 +598,93 @@
               }
               go(tile);
             });
+
             tile.addEventListener('keydown', (e)=>{
               if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                go(tile);
-              }
-            });
-          });
-        }
-
-        /* ====== Mobile: Arm-to-open ====== */
-        if (isTouch) {
-          allTiles.forEach(tile => {
-            tile._armedOpen = false;
-
-            tile.addEventListener('touchstart', (e) => {
-              const badge = tile.querySelector('.date-badge');
-
-              if (tile._armedOpen) {
                 e.preventDefault();
                 go(tile);
                 return;
               }
 
-              // Vorschau (Badge, optional Caption)
-              if (badge) {
-                badge.style.opacity = '1';
-                badge.style.transform = 'translateY(0)';
-              }
-              if (tile.dataset.hasCaption === '1') {
-                tile.classList.add('show-caption');
+              // Pfeiltasten-Navigation
+              const currentIndex = allTiles.indexOf(tile);
+              let targetIndex = -1;
+
+              switch(e.key) {
+                case 'ArrowRight':
+                  targetIndex = currentIndex + 1;
+                  break;
+                case 'ArrowLeft':
+                  targetIndex = currentIndex - 1;
+                  break;
+                case 'ArrowDown':
+                  targetIndex = currentIndex + GRID_COLS;
+                  break;
+                case 'ArrowUp':
+                  targetIndex = currentIndex - GRID_COLS;
+                  break;
+                case 'Home':
+                  targetIndex = 0;
+                  break;
+                case 'End':
+                  targetIndex = allTiles.length - 1;
+                  break;
+                default:
+                  return;
               }
 
-              clearTimeout(badge?._hideTimer);
-              const hide = () => {
-                if (badge) {
-                  badge.style.opacity = '0';
-                  badge.style.transform = 'translateY(-3px)';
+              if (targetIndex >= 0 && targetIndex < allTiles.length) {
+                e.preventDefault();
+                const targetTile = allTiles[targetIndex];
+                if (targetTile && !targetTile.classList.contains('hidden')) {
+                  targetTile.focus();
+                  targetTile.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
-                tile.classList.remove('show-caption');
-                tile._armedOpen = false;
-              };
-              if (badge) {
-                badge._hideTimer = setTimeout(hide, 3000);
-              } else {
-                tile._previewTimer = setTimeout(hide, 3000);
+              }
+            });
+          });
+        }
+
+        /* ====== Mobile: Arm-to-open (optimiert) ====== */
+        if (isTouch) {
+          const showPreview = (tile) => {
+            const badge = tile.querySelector('.date-badge');
+            if (badge) {
+              badge.style.opacity = '1';
+              badge.style.transform = 'translateY(0)';
+            }
+            if (tile.dataset.hasCaption === '1') {
+              tile.classList.add('show-caption');
+            }
+          };
+
+          const hidePreview = (tile) => {
+            const badge = tile.querySelector('.date-badge');
+            if (badge) {
+              badge.style.opacity = '0';
+              badge.style.transform = 'translateY(-3px)';
+            }
+            tile.classList.remove('show-caption');
+            tile._armedOpen = false;
+          };
+
+          allTiles.forEach(tile => {
+            tile._armedOpen = false;
+            tile._hideTimer = null;
+
+            tile.addEventListener('touchstart', () => {
+              if (tile._armedOpen) {
+                go(tile);
+                return;
               }
 
+              showPreview(tile);
+              clearTimeout(tile._hideTimer);
+              tile._hideTimer = setTimeout(() => hidePreview(tile), BADGE_HIDE_TIMEOUT_MS);
               tile._armedOpen = true;
-
-              // ersten synthetischen Click unterdrücken
               tile._suppressNextClick = true;
-              setTimeout(()=> tile._suppressNextClick = false, 450);
-            }, { passive:true });
+              setTimeout(() => tile._suppressNextClick = false, CLICK_SUPPRESS_MS);
+            }, { passive: true });
 
             tile.addEventListener('click', (e) => {
               if (tile._suppressNextClick) {
@@ -654,27 +693,32 @@
                 tile._suppressNextClick = false;
                 return;
               }
-              if (tile._armedOpen) {
-                go(tile);
-              } else {
-                go(tile);
-              }
+              go(tile);
             });
           });
         }
 
-        /* ====== Scroll-Handling & Clamping ====== */
-        let ticking = false;
-        let lastClamp = 0;
-        let scrollTimeout = null;
+        /* ====== Konsolidierter Scroll-Handler (Performance-Optimiert) ====== */
         const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        let scrollState = {
+          ticking: false,
+          lastClamp: 0,
+          timeout: null,
+          clampTicking: false,
+          lastScrollTS: 0
+        };
 
-        function onScrollFrame(){
+        // Zentrale Scroll-Update Funktion
+        function performScrollUpdates() {
           const now = performance.now();
-          if (!isMobileUA && (now - lastClamp > 80)) {
+
+          // Badge-Clamping (gedrosselt für Desktop)
+          if (!isMobileUA && (now - scrollState.lastClamp > CLAMP_THROTTLE_MS)) {
             clampBadgeToGridTop();
-            lastClamp = now;
+            scrollState.lastClamp = now;
           }
+
+          // Weitere Updates
           if (!isMobileUA) {
             updateBadge();
             if (yearRail.classList.contains('visible')) setRailFrameToBadge();
@@ -684,72 +728,86 @@
           }
         }
 
-        function onScroll(){
-          // Sofort clampen, um Bounce zu verhindern
+        // Haupt Scroll-Handler
+        function onScroll() {
+          // Sofortiges Clamping gegen Bounce
           clampBadgeToGridTop();
 
+          // Load-More Check (nur wenn nötig)
+          if (nearBottom()) {
+            if (!scrollState.loadMoreScheduled) {
+              scrollState.loadMoreScheduled = true;
+              loadMore();
+              setTimeout(() => scrollState.loadMoreScheduled = false, SCROLL_THROTTLE_MS);
+            }
+          }
+
+          // Mobile: Debounced Updates
           if (isMobileUA) {
-            if (scrollTimeout) clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
+            if (scrollState.timeout) clearTimeout(scrollState.timeout);
+            scrollState.timeout = setTimeout(() => {
               updateBadge();
               if (yearRail.classList.contains('visible')) setRailFrameToBadge();
               if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle();
               else syncURLToCurrentYear();
               hydrateVisibleImages();
-            }, 160);
-          } else {
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(()=>{ onScrollFrame(); ticking = false; });
+            }, MOBILE_SCROLL_DEBOUNCE_MS);
+          }
+          // Desktop: rAF-basiert
+          else {
+            if (scrollState.ticking) return;
+            scrollState.ticking = true;
+            requestAnimationFrame(() => {
+              performScrollUpdates();
+              scrollState.ticking = false;
+            });
+          }
+
+          // Clamp-Ticker aktivieren
+          scrollState.lastScrollTS = performance.now();
+          if (!scrollState.clampTicking) {
+            scrollState.clampTicking = true;
+            requestAnimationFrame(function tick() {
+              if (!scrollState.clampTicking) return;
+              clampBadgeToGridTop();
+              if (performance.now() - scrollState.lastScrollTS > CLAMP_TICK_TIMEOUT_MS) {
+                scrollState.clampTicking = false;
+                return;
+              }
+              requestAnimationFrame(tick);
+            });
           }
         }
 
-        window.addEventListener('scroll', onScroll, { passive:true });
-        window.addEventListener('resize', onScroll, { passive:true });
-
-        // Extra-Ereignisse für sofortiges Clamping gegen Rubber-Band/URL-Bar
-        window.addEventListener('wheel', clampBadgeToGridTop, { passive:true });
-        window.addEventListener('touchstart', clampBadgeToGridTop, { passive:true });
-        window.addEventListener('touchmove', clampBadgeToGridTop, { passive:true });
+        // Event Listeners (konsolidiert)
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        window.addEventListener('wheel', clampBadgeToGridTop, { passive: true });
+        window.addEventListener('touchstart', clampBadgeToGridTop, { passive: true });
+        window.addEventListener('touchmove', clampBadgeToGridTop, { passive: true });
 
         if (window.visualViewport) {
-          window.visualViewport.addEventListener('scroll', clampBadgeToGridTop, { passive:true });
-          window.visualViewport.addEventListener('resize', clampBadgeToGridTop, { passive:true });
+          window.visualViewport.addEventListener('scroll', clampBadgeToGridTop, { passive: true });
+          window.visualViewport.addEventListener('resize', clampBadgeToGridTop, { passive: true });
         }
-
-        // rAF-Ticker während Scroll-Aktivität (gedämpft)
-        let scrollingTick = false;
-        let lastScrollTS = 0;
-        function tickClamp(){
-          if (!scrollingTick) return;
-          clampBadgeToGridTop();
-          if (performance.now() - lastScrollTS > 120) {
-            scrollingTick = false;
-            return;
-          }
-          requestAnimationFrame(tickClamp);
-        }
-        function kickClampTicker(){
-          lastScrollTS = performance.now();
-          if (!scrollingTick){
-            scrollingTick = true;
-            requestAnimationFrame(tickClamp);
-          }
-        }
-        window.addEventListener('scroll', kickClampTicker, { passive:true });
 
         /* ====== Initial ====== */
         applyVisibility();
-        prefetchNext();
         clampBadgeToGridTop();
-        hydrateDateBadges();
 
+        // Eager-Bilder sofort zeigen
         grid.querySelectorAll('img[src]:not([data-src])')
           .forEach(img => { img.closest('.photo-tile')?.classList.add('ready'); });
 
         const init = getCurrent();
         lastURLYear = init.year || lastURLYear;
-        syncURLToCurrentYear();
+
+        // Nicht-kritische Initialisierung im Idle
+        scheduleIdleTask(() => {
+          hydrateDateBadges();
+          prefetchNext();
+          syncURLToCurrentYear();
+        });
 
         requestAnimationFrame(async () => {
           const y = params.get('year');
