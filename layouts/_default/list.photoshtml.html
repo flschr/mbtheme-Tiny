@@ -285,6 +285,9 @@
         const CLAMP_TICK_TIMEOUT_MS = 120;
         const BADGE_HIDE_TIMEOUT_MS = 3000;
         const CLICK_SUPPRESS_MS = 450;
+        const JUMP_BUFFER_BEFORE = BATCH_SIZE * 2;  // 72 Tiles beim Jahr-Sprung
+        const JUMP_BUFFER_AFTER = BATCH_SIZE * 4;   // 144 Tiles beim Jahr-Sprung
+        const MAX_VIRTUAL_WINDOW = BATCH_SIZE * 20; // Max 720 Tiles gleichzeitig
 
         // ====== DOM-Referenzen ======
         const grid        = document.getElementById('photoGrid');
@@ -304,7 +307,11 @@
 
         const years = Array.from(new Set(allTiles.map(t => t.dataset.year))).filter(Boolean).sort((a,b)=> b.localeCompare(a));
 
-        let visibleCount   = Math.max(INITIAL_LOAD_COUNT, Math.min(allTiles.length, INITIAL_LOAD_COUNT));
+        // Virtual Scroll Range (statt nur visibleCount)
+        let visibleRange = {
+          start: 0,
+          end: Math.min(allTiles.length, INITIAL_LOAD_COUNT)
+        };
         const batchSize    = BATCH_SIZE;
         const prefetchAhead= PREFETCH_AHEAD;
 
@@ -351,10 +358,12 @@
           scrollIdleTimer = setTimeout(()=>{ isProgrammaticScroll = false; syncURLToCurrentYear(); }, SCROLL_IDLE_UNLOCK_MS);
         }
 
-        /* ====== Sichtbarkeit ====== */
+        /* ====== Sichtbarkeit (Virtual Scroll) ====== */
         function applyVisibility(){
-          allTiles.forEach(t => t.classList.add('hidden'));
-          allTiles.forEach((t,i)=> t.classList.toggle('hidden', i >= visibleCount));
+          allTiles.forEach((t, i) => {
+            const inRange = i >= visibleRange.start && i < visibleRange.end;
+            t.classList.toggle('hidden', !inRange);
+          });
           hydrateVisibleImages();
           updateBadge();
 
@@ -368,8 +377,8 @@
           if (prefetchIdleTask) cancelIdleTask(prefetchIdleTask);
 
           prefetchIdleTask = scheduleIdleTask(() => {
-            const start = visibleCount;
-            const end   = Math.min(allTiles.length, visibleCount + prefetchAhead);
+            const start = visibleRange.end;
+            const end   = Math.min(allTiles.length, visibleRange.end + prefetchAhead);
             for (let i = start; i < end; i++) {
               const img = allTiles[i]?.querySelector('img');
               if (img && img.dataset && !img.dataset.activated) {
@@ -382,23 +391,32 @@
         }
 
         function loadMore() {
-          const before = visibleCount;
-          visibleCount = Math.min(allTiles.length, visibleCount + batchSize);
-          if (visibleCount === before) return;
+          const before = visibleRange.end;
+          visibleRange.end = Math.min(allTiles.length, visibleRange.end + batchSize);
+          if (visibleRange.end === before) return;
           applyVisibility();
           prefetchNext();
           syncURLToCurrentYear();
         }
 
+        function loadBefore() {
+          if (visibleRange.start === 0) return;
+          const newStart = Math.max(0, visibleRange.start - batchSize);
+          visibleRange.start = newStart;
+          applyVisibility();
+          syncURLToCurrentYear();
+        }
+
         /* ====== Aktuelle Position (an der Pille) ====== */
         function getCurrent(){
-          const loaded = Math.min(visibleCount, allTiles.length);
-          if (!loaded) return { year:'', label:'' };
+          if (visibleRange.end === 0) return { year:'', label:'' };
 
           const badgeBottom = monthBadge.getBoundingClientRect().bottom + 4;
           let candidate = null, bestDelta = Infinity;
-          for (let i=0;i<loaded;i++){
-            const t = allTiles[i]; if (!t || t.classList.contains('hidden')) continue;
+
+          for (let i = visibleRange.start; i < visibleRange.end; i++){
+            const t = allTiles[i];
+            if (!t || t.classList.contains('hidden')) continue;
             const r = t.getBoundingClientRect();
             const d = Math.abs(r.top - badgeBottom);
             if (r.top >= badgeBottom - 1) { candidate = t; break; }
@@ -505,20 +523,25 @@
         async function scrollToYear(targetYear){
           const index = allTiles.findIndex(t => t.dataset.year === targetYear);
           if (index === -1) return;
+
           isProgrammaticScroll = true;
-          while (visibleCount <= index) {
-            const before = visibleCount;
-            visibleCount = Math.min(allTiles.length, visibleCount + batchSize);
-            applyVisibility();
-            prefetchNext();
-            await new Promise(r => requestAnimationFrame(r));
-            if (visibleCount === before) break;
-          }
+
+          // Virtual Scroll: Lade nur ein Fenster um das Ziel herum
+          visibleRange.start = Math.max(0, index - JUMP_BUFFER_BEFORE);
+          visibleRange.end = Math.min(allTiles.length, index + JUMP_BUFFER_AFTER);
+
+          applyVisibility();
+          await new Promise(r => requestAnimationFrame(r));
+
+          // Prefetch für smooth scrolling
+          prefetchNext();
+
           const anchor = allTiles[index];
           if (anchor && !anchor.classList.contains('hidden')) {
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             anchor.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
           }
+
           const url = new URL(location.href);
           url.searchParams.set('year', targetYear);
           history.replaceState(null, '', url);
@@ -576,6 +599,10 @@
         function nearBottom(px = NEAR_BOTTOM_THRESHOLD){
           const doc = document.documentElement;
           return (window.innerHeight + window.scrollY) >= (doc.scrollHeight - px);
+        }
+
+        function nearTop(px = NEAR_BOTTOM_THRESHOLD){
+          return window.scrollY <= px;
         }
 
         /* ====== Navigation-Handler ====== */
@@ -705,7 +732,9 @@
           lastClamp: 0,
           timeout: null,
           clampTicking: false,
-          lastScrollTS: 0
+          lastScrollTS: 0,
+          loadMoreScheduled: false,
+          loadBeforeScheduled: false
         };
 
         // Zentrale Scroll-Update Funktion
@@ -733,12 +762,20 @@
           // Sofortiges Clamping gegen Bounce
           clampBadgeToGridTop();
 
-          // Load-More Check (nur wenn nötig)
+          // Bidirektionales Laden
           if (nearBottom()) {
             if (!scrollState.loadMoreScheduled) {
               scrollState.loadMoreScheduled = true;
               loadMore();
               setTimeout(() => scrollState.loadMoreScheduled = false, SCROLL_THROTTLE_MS);
+            }
+          }
+
+          if (nearTop() && visibleRange.start > 0) {
+            if (!scrollState.loadBeforeScheduled) {
+              scrollState.loadBeforeScheduled = true;
+              loadBefore();
+              setTimeout(() => scrollState.loadBeforeScheduled = false, SCROLL_THROTTLE_MS);
             }
           }
 
