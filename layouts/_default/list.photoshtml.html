@@ -749,8 +749,60 @@
           clampTicking: false,
           lastScrollTS: 0,
           loadMoreScheduled: false,
-          loadBeforeScheduled: false
+          loadBeforeScheduled: false,
+          lastScrollY: window.scrollY,
+          lastScrollCheck: performance.now(),
+          velocity: 0
         };
+
+        // Aggressive Bild-Aktivierung bei schnellem Scrollen
+        function eagerLoadOnFastScroll() {
+          const velocity = Math.abs(scrollState.velocity);
+          const VELOCITY_THRESHOLD = 800; // px/s
+
+          if (velocity < VELOCITY_THRESHOLD) return;
+
+          // Bei schnellem Scrollen: Lade deutlich mehr Bilder voraus
+          const scrollingDown = scrollState.velocity > 0;
+          const viewportHeight = window.innerHeight;
+          const estimatedTilesPerViewport = Math.ceil(viewportHeight / 140);
+
+          // Je schneller, desto mehr vorladen (2-5 Viewports)
+          const velocityFactor = Math.min(5, Math.ceil(velocity / VELOCITY_THRESHOLD));
+          const tilesToPreload = estimatedTilesPerViewport * velocityFactor;
+
+          if (scrollingDown) {
+            // Nach unten scrollen: Lade Bilder unterhalb des aktuellen Bereichs
+            const currentBottomIndex = visibleRange.end;
+            const preloadEnd = Math.min(allTiles.length, currentBottomIndex + tilesToPreload);
+
+            for (let i = currentBottomIndex; i < preloadEnd; i++) {
+              const img = allTiles[i]?.querySelector('img[data-src]');
+              if (img) activateImg(img);
+            }
+
+            // Erweitere auch den sichtbaren Bereich
+            if (preloadEnd > visibleRange.end) {
+              visibleRange.end = preloadEnd;
+              applyVisibility();
+            }
+          } else {
+            // Nach oben scrollen: Lade Bilder oberhalb des aktuellen Bereichs
+            const currentTopIndex = visibleRange.start;
+            const preloadStart = Math.max(0, currentTopIndex - tilesToPreload);
+
+            for (let i = preloadStart; i < currentTopIndex; i++) {
+              const img = allTiles[i]?.querySelector('img[data-src]');
+              if (img) activateImg(img);
+            }
+
+            // Erweitere auch den sichtbaren Bereich
+            if (preloadStart < visibleRange.start) {
+              visibleRange.start = preloadStart;
+              applyVisibility();
+            }
+          }
+        }
 
         // Zentrale Scroll-Update Funktion
         function performScrollUpdates() {
@@ -774,8 +826,27 @@
 
         // Haupt Scroll-Handler
         function onScroll() {
+          // Scrollgeschwindigkeit messen
+          const now = performance.now();
+          const currentScrollY = window.scrollY;
+          const deltaY = currentScrollY - scrollState.lastScrollY;
+          const deltaTime = now - scrollState.lastScrollCheck;
+
+          if (deltaTime > 0) {
+            // Velocity in px/s
+            scrollState.velocity = (deltaY / deltaTime) * 1000;
+          }
+
+          scrollState.lastScrollY = currentScrollY;
+          scrollState.lastScrollCheck = now;
+
           // Sofortiges Clamping gegen Bounce
           clampBadgeToGridTop();
+
+          // Bei schnellem Scrollen: Aggressive Vorlade-Strategie
+          if (!isProgrammaticScroll) {
+            eagerLoadOnFastScroll();
+          }
 
           // Bidirektionales Laden
           if (nearBottom()) {
