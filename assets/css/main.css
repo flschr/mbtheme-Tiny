@@ -261,7 +261,13 @@ footer .attribution {
    ========================================================================== */
 
 .post-header {
-	margin-bottom: 0;
+        margin-bottom: 0;
+}
+
+.post-header .p-name {
+        font-size: 1.5em;
+        margin-top: 0;
+        margin-bottom: 0.6em;
 }
 
 span.post-date {
