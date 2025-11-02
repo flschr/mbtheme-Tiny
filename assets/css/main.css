@@ -884,25 +884,67 @@ kbd {
    ========================================================================== */
 
 #myBtn {
+        --scroll-progress: 0;
         display: none;
         position: fixed;
-        bottom: 20px;
-        right: 30px;
+        bottom: 1.5rem;
+        right: 1.5rem;
         z-index: 99;
-        border: 1px solid var(--link);
-        background: transparent;
-        color: var(--link);
+        border: none;
+        background-color: var(--link);
+        color: var(--button-text);
         cursor: pointer;
-        padding: 0.3em 0.5em;
-        border-radius: var(--radius-default);
-        font-size: 2.4em;
-        opacity: 0.8;
-        transition: opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 999px;
+        font-size: 1rem;
+        opacity: 0.65;
+        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.1rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 0;
+        touch-action: manipulation;
+        isolation: isolate;
+}
+
+#myBtn::after {
+        content: "";
+        position: absolute;
+        inset: -0.35rem;
+        border-radius: 999px;
+        background: conic-gradient(var(--link) calc(var(--scroll-progress) * 1%), transparent 0);
+        opacity: 0.35;
+        z-index: -1;
+        pointer-events: none;
 }
 
 #myBtn:hover,
 #myBtn:focus-visible {
         opacity: 1;
-        background: var(--link);
-        color: var(--button-text);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+#myBtn:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
+}
+
+#myBtn:active {
+        transform: translateY(0);
+}
+
+.scroll-btn__icon {
+        font-size: 1.4rem;
+        line-height: 1;
+}
+
+.scroll-btn__progress {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        line-height: 1;
 }
