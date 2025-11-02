@@ -106,7 +106,7 @@
     if (posts[index]) {
       posts[index].scrollIntoView({
         behavior: 'smooth',
-        block: 'center'
+        block: 'start'
       });
 
       // Visuelles Feedback
