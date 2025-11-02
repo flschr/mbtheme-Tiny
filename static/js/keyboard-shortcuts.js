@@ -87,6 +87,12 @@
     currentPostIndex++;
     if (currentPostIndex >= posts.length) {
       currentPostIndex = posts.length - 1;
+
+      // Versuche beim Erreichen des letzten Beitrags zur nächsten Seite zu wechseln
+      if (!navigateToPage('next')) {
+        return;
+      }
+
       return;
     }
 
@@ -133,7 +139,7 @@
   // Navigation zwischen Seiten (Pagination)
   function navigateToPage(direction) {
     const nav = document.querySelector('.post-nav');
-    if (!nav) return;
+    if (!nav) return false;
 
     let link;
     if (direction === 'next') {
@@ -144,7 +150,10 @@
 
     if (link) {
       window.location.href = link.href;
+      return true;
     }
+
+    return false;
   }
 
   // Scroll nach oben
