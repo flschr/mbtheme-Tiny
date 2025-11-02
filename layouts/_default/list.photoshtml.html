@@ -38,10 +38,30 @@
       margin: 2rem 0 1rem;
       padding-bottom: 0.5rem;
       color: #333;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
     }
 
     .month-header:first-child {
       margin-top: 0;
+    }
+
+    .month-header::before,
+    .month-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #ddd 20%, #ddd 80%, transparent);
+    }
+
+    .month-header::before {
+      background: linear-gradient(to left, #ddd, transparent);
+    }
+
+    .month-header::after {
+      background: linear-gradient(to right, #ddd, transparent);
     }
 
     /* Instagram-Style Grid */
@@ -154,6 +174,12 @@
       .month-header {
         color: #e5e7eb;
       }
+      .month-header::before {
+        background: linear-gradient(to left, #4b5563, transparent);
+      }
+      .month-header::after {
+        background: linear-gradient(to right, #4b5563, transparent);
+      }
       .photo-tile {
         background: #1f2937;
       }
@@ -173,11 +199,16 @@
   {{ $.Scratch.Set "currentMonth" "" }}
   {{ $imageIndex := 0 }}
 
+  {{/* Deutsche Monatsnamen */}}
+  {{ $monthsDE := dict "January" "Januar" "February" "Februar" "March" "März" "April" "April" "May" "Mai" "June" "Juni" "July" "Juli" "August" "August" "September" "September" "October" "Oktober" "November" "November" "December" "Dezember" }}
+
   {{ range $p := $pages }}
-    {{ $dateFormatted := $p.Date.Format "2. January 2006" }}
+    {{ $monthEN := $p.Date.Format "January" }}
+    {{ $monthDE := index $monthsDE $monthEN }}
+    {{ $dateFormatted := printf "%d. %s %s" $p.Date.Day $monthDE ($p.Date.Format "2006") }}
     {{ $dateISO := $p.Date.Format "2006-01-02" }}
     {{ $year := $p.Date.Format "2006" }}
-    {{ $monthYear := $p.Date.Format "January 2006" }}
+    {{ $monthYear := printf "%s %s" $monthDE ($p.Date.Format "2006") }}
 
     {{/* Micro.blog Photos */}}
     {{ with $p.Params.photos }}
