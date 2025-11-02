@@ -31,13 +31,15 @@
 
 {{- if $res -}}
   {{/* Lokales Bild: responsive Derivate */}}
+  {{- $siteQuality := default 80 ($page.Site.Params.renderImageQuality) -}}
+  {{- $quality := (default $siteQuality ($page.Param "renderImageQuality")) | int -}}
   {{- $widths := slice 200 400 768 1024 1440 -}}
   {{- $srcset := slice -}}
   {{- range $w := $widths -}}
-    {{- $v := $res.Fit (printf "%dx q75" $w) -}}
+    {{- $v := $res.Fit (printf "%dx q%d" $w $quality) -}}
     {{- $srcset = $srcset | append (printf "%s %dw" $v.RelPermalink $w) -}}
   {{- end -}}
-  {{- $default := $res.Fit "1024x q75" -}}
+  {{- $default := $res.Fit (printf "1024x q%d" $quality) -}}
   <img
     src="{{ $default.RelPermalink }}"
     srcset="{{ delimit $srcset ", " }}"
