@@ -550,6 +550,14 @@ article img,
 	border-radius: var(--radius-default);
 }
 
+.photos-grid .photo-tile {
+	border-radius: var(--radius-default);
+}
+
+.photos-grid .photo-tile img {
+	border-radius: inherit;
+}
+
 /* Video */
 video {
 	width: 100%;
