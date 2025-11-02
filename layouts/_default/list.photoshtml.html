@@ -1,894 +1,332 @@
 {{ define "main" }}
 <main class="photos content" aria-label="Foto-Archiv">
   <style>
-    :root{
-      --safe-top: env(safe-area-inset-top, 0px);
-      --badge-margin: 0.9rem;
-      --grid-gap-desktop: 4px;
-      --grid-gap-tablet: 3px;
-      --grid-gap-mobile: 2px;
-      --grid-min-tile-size: 140px;
-      --grid-max-width: 1200px;
-      --tile-border-radius: 4px;
-      --transition-fast: 0.18s ease;
-      --transition-normal: 0.25s ease;
-      --transition-slow: 0.35s ease;
+    :root {
+      --gap: 4px;
+      --tile-size: 140px;
+      --max-width: 1200px;
+      --radius: 4px;
     }
 
-    .photos.content{
+    .photos.content {
       overscroll-behavior-y: contain;
       -webkit-tap-highlight-color: transparent;
-      scroll-behavior: smooth;
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .photos.content{ scroll-behavior: auto; }
     }
 
-    /* ====== Grid mit Container Query Support ====== */
-    .photo-grid-wrapper{
-      min-height: 60vh;
-      position: relative;
-      container-type: inline-size;
-      container-name: photo-grid-wrapper;
-    }
-    .photo-grid{
+    /* Instagram-Style Grid */
+    .photo-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-tile-size), 1fr));
-      gap: var(--grid-gap-desktop);
-      max-width: var(--grid-max-width);
+      grid-template-columns: repeat(auto-fill, minmax(var(--tile-size), 1fr));
+      gap: var(--gap);
+      max-width: var(--max-width);
       margin: 0 auto;
+      padding: 0;
     }
 
-    /* Fallback für ältere Browser */
-    @media (max-width: 768px){ .photo-grid{ gap: var(--grid-gap-tablet); } }
-    @media (max-width: 480px){ .photo-grid{ gap: var(--grid-gap-mobile); } }
-
-    /* Container Queries */
-    @container photo-grid-wrapper (max-width: 768px) {
-      .photo-grid{ gap: var(--grid-gap-tablet); }
-    }
-    @container photo-grid-wrapper (max-width: 480px) {
-      .photo-grid{ gap: var(--grid-gap-mobile); }
+    @media (max-width: 768px) {
+      :root {
+        --gap: 3px;
+        --tile-size: 120px;
+      }
     }
 
-    /* ====== Tiles ====== */
-    .photo-tile{
+    @media (max-width: 480px) {
+      :root {
+        --gap: 2px;
+        --tile-size: 100px;
+      }
+    }
+
+    /* Photo Tiles */
+    .photo-tile {
       position: relative;
       aspect-ratio: 1;
       overflow: hidden;
       background: #f3f4f6;
       cursor: pointer;
-      transition: opacity var(--transition-normal), transform 0.1s ease, box-shadow var(--transition-fast);
-      opacity: 0; /* wird durch .ready aufgehoben */
-      border-radius: var(--tile-border-radius);
-
-      /* Performance + Platzhaltergröße */
-      content-visibility: auto;
-      contain-intrinsic-size: 220px 220px;
+      border-radius: var(--radius);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .photo-tile.ready{ opacity: 1; }
-    .photo-tile.hidden{ display: none; }
-    .photo-tile:active{ transform: scale(0.99); }
 
-    .photo-tile img{
+    .photo-tile:hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+      z-index: 1;
+    }
+
+    .photo-tile:active {
+      transform: scale(0.98);
+    }
+
+    .photo-tile img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: filter var(--transition-slow), transform var(--transition-slow), opacity var(--transition-slow);
-    }
-    .photo-tile img.lqip{
-      filter: blur(12px);
-      transform: scale(1.03);
-      opacity: 0.9;
+      transition: opacity 0.3s ease;
     }
 
-    /* ====== Pill Basis ====== */
-    .pill{
-      background: rgba(17,24,39,.85);
-      color:#fff;
-      border:1px solid rgba(255,255,255,.12);
-      border-radius: 9999px;
-      padding:.62rem 1.12rem;
-      font-size:1rem;
-      line-height:1.1;
-      backdrop-filter: blur(3px) saturate(120%);
-      box-shadow:0 4px 16px rgba(0,0,0,.2);
-      white-space:nowrap;
-    }
-    @media (pointer:coarse){
-      .pill{ padding:.82rem 1.28rem; font-size:1.08rem; }
-    }
-    @media (prefers-color-scheme: light){
-      .pill{ background: rgba(255,255,255,.95); color:#111827; border-color:#e5e7eb; }
+    /* LQIP Blur Effect */
+    .photo-tile img.lqip {
+      filter: blur(10px);
+      transform: scale(1.05);
     }
 
-    /* ====== FIXED Datumspille ====== */
-    .month-badge{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      top: calc(var(--safe-top) + var(--badge-margin));
-      z-index: 12;
-      cursor: pointer;
-      will-change: top;
+    .photo-tile img.loaded {
+      filter: none;
+      transform: scale(1);
     }
-    .month-badge.active{ box-shadow:0 0 0 3px rgba(59,130,246,.35); }
 
-    /* ====== Year Rail ====== */
-    .year-rail{
-      position: fixed;
-      top: var(--railTop, 64px);
-      left: var(--railLeft, 0);
-      width: var(--railWidth, 100%);
-      z-index: 100;
-      pointer-events:none;
-    }
-    .year-rail-strip{
-      width:100%;
-      background: rgba(0,0,0,.55);
-      outline:1px solid rgba(255,255,255,.15);
-      backdrop-filter: blur(2px);
-      transform: scaleX(0.15);
-      transform-origin: var(--anchorX, 50%) 50%;
-      clip-path: inset(0 50% 0 50%);
-      transition: transform .22s ease-out, clip-path .28s ease-out, opacity .18s ease-out;
+    /* Hover Overlay */
+    .photo-tile::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.5) 100%);
       opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
     }
-    .year-rail.visible .year-rail-strip{
-      pointer-events:auto;
-      transform: scaleX(1);
-      clip-path: inset(0 0 0 0);
+
+    .photo-tile:hover::after {
       opacity: 1;
     }
-    .year-row{
-      display:flex; align-items:center; gap:.5rem;
-      overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
-      padding:.75rem 1rem;
-    }
-    .year-row::-webkit-scrollbar{ display:none; }
-    .ypill{ cursor:pointer; opacity:0; transform: translateY(-6px); transition: opacity .22s ease, transform .22s ease; }
-    .year-rail.visible .ypill{ opacity:1; transform: translateY(0); transition-delay: calc(var(--i,0) * 18ms); }
-    .ypill[aria-pressed="true"]{ background:#3b82f6; border-color:#3b82f6; color:#fff; }
 
-    /* ====== Hover/Fokus ====== */
-    .photo-tile:focus-visible{ outline: 3px solid #3b82f6; outline-offset: 2px; }
-    .photo-tile:hover{ box-shadow: 0 8px 28px rgba(0,0,0,.22); }
-    .photo-tile:hover img{ transform: scale(1.03); }
-
-    /* Overlay nur bei Caption */
-    .photo-tile[data-has-caption="1"]::after{
-      content: attr(data-caption);
-      position:absolute; left:0; right:0; bottom:0;
-      padding:.55rem .65rem;
-      color:#fff; font-size:.82rem; line-height:1.25;
-      opacity:0; transform: translateY(6px);
-      transition: opacity .18s ease, transform .18s ease;
-      background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 65%, rgba(0,0,0,.7) 100%);
-      text-shadow: 0 1px 2px rgba(0,0,0,.6);
-      pointer-events:none;
-    }
-    .photo-tile[data-has-caption="1"]:hover::after,
-    .photo-tile[data-has-caption="1"]:focus-visible::after{
-      opacity:1; transform: translateY(0);
-    }
-    .photo-tile.show-caption[data-has-caption="1"]::after{
-      opacity:1; transform: translateY(0);
-    }
-
-    /* Mini-Datum oben rechts */
-    .photo-tile .date-badge{
+    /* Date Badge */
+    .date-badge {
       position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      padding: 0.28rem 0.5rem;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      padding: 0.35rem 0.6rem;
       font-size: 0.75rem;
       line-height: 1;
       color: #fff;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 0.6rem;
-      box-shadow: 0 2px 10px rgba(0,0,0,.18);
+      background: rgba(0,0,0,.7);
+      border-radius: 4px;
       opacity: 0;
-      transform: translateY(-3px);
-      transition: opacity var(--transition-fast), transform var(--transition-fast);
+      transform: translateY(4px);
+      transition: opacity 0.2s ease, transform 0.2s ease;
       pointer-events: none;
+      backdrop-filter: blur(4px);
     }
-    .photo-tile:hover .date-badge,
-    .photo-tile:focus-visible .date-badge{
+
+    .photo-tile:hover .date-badge {
       opacity: 1;
       transform: translateY(0);
     }
 
-    #infiniteSentinel{ height:2px; }
+    /* Loading Indicator */
+    .loading-indicator {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    /* Focus States */
+    .photo-tile:focus-visible {
+      outline: 3px solid #3b82f6;
+      outline-offset: 2px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .photo-tile {
+        background: #1f2937;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .photo-tile,
+      .photo-tile img,
+      .date-badge {
+        transition: none;
+      }
+    }
   </style>
 
-  <div class="photo-grid-wrapper">
-    <!-- Datumspille -->
-    <button id="monthBadge" class="month-badge pill"
-            aria-live="polite"
-            aria-label="Aktueller Monat und Jahr. Klicken um Jahresübersicht zu öffnen"
-            title="Jahre anzeigen"></button>
+  <div class="photo-grid" id="photoGrid">
+    {{ $pages := sort (where .Site.RegularPages "Type" "in" (slice "post" "photo")) "Date" "desc" }}
+    {{ $imageIndex := 0 }}
 
-    <!-- Year Rail -->
-    <nav id="yearRail" class="year-rail" aria-hidden="true" aria-label="Jahresnavigation">
-      <div class="year-rail-strip">
-        <div class="year-row" id="yearRow" role="tablist" aria-label="Jahresauswahl"></div>
-      </div>
-    </nav>
+    {{ range $p := $pages }}
+      {{ $dateFormatted := $p.Date.Format "2. January 2006" }}
+      {{ $dateISO := $p.Date.Format "2006-01-02" }}
+      {{ $year := $p.Date.Format "2006" }}
 
-    <section class="photo-grid" id="photoGrid">
-      {{ $pages := sort (where .Site.RegularPages "Type" "in" (slice "post" "photo")) "Date" "desc" }}
-      {{ $imageIndex := 0 }}
+      {{ with $p.Params.photos }}
+        {{ range $i, $url := . }}
+          {{ $eager := lt $imageIndex 12 }}
+          {{ $isMBPhotos := or (hasPrefix $url "https://micro.blog/photos/") (hasPrefix $url "http://micro.blog/photos/") }}
+          {{ $src300 := "" }}{{ $src600 := "" }}{{ $tiny := "" }}
 
-      {{ range $p := $pages }}
-        {{ $dateFormatted := $p.Date.Format "2. January 2006" }}
-        {{ $dateISO := $p.Date.Format "2006-01-02" }}
-        {{ $year := $p.Date.Format "2006" }}
-        {{ $overlayCaption := "" }}
-        {{ with $p.Title }}{{ $overlayCaption = . | plainify | truncate 80 }}{{ end }}
+          {{ if $isMBPhotos }}
+            {{ $src300 = replaceRE `/photos/[^/]+/` "/photos/200x/" $url }}
+            {{ $src600 = replaceRE `/photos/[^/]+/` "/photos/400x/" $url }}
+            {{ $tiny = replaceRE `/photos/[^/]+/` "/photos/40x/" $url }}
+          {{ else }}
+            {{ $encoded := $url | urlquery }}
+            {{ $src300 = printf "https://micro.blog/photos/200x/%s" $encoded }}
+            {{ $src600 = printf "https://micro.blog/photos/400x/%s" $encoded }}
+            {{ $tiny = printf "https://micro.blog/photos/40x/%s" $encoded }}
+          {{ end }}
 
-        {{ with $p.Params.photos }}
-          {{ range $i, $url := . }}
-            {{ $eager := lt $imageIndex 12 }}
-            {{ $isMBPhotos := or (hasPrefix $url "https://micro.blog/photos/") (hasPrefix $url "http://micro.blog/photos/") }}
-            {{ $src300 := "" }}{{ $src600 := "" }}{{ $srcFull := "" }}{{ $tiny := "" }}
-            {{ if $isMBPhotos }}
-              {{ $src300 = replaceRE `/photos/[^/]+/` "/photos/200x/" $url }}
-              {{ $src600 = replaceRE `/photos/[^/]+/` "/photos/400x/" $url }}
-              {{ $tiny = replaceRE `/photos/[^/]+/` "/photos/40x/" $url }}
-              {{ $srcFull = $url }}
+          <a class="photo-tile"
+             href="{{ $p.RelPermalink }}"
+             aria-label="{{ $dateFormatted }}"
+             data-date="{{ $dateFormatted }}"
+             data-year="{{ $year }}">
+            {{ if $eager }}
+              <img
+                src="{{ $src300 }}"
+                srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
+                sizes="(max-width: 768px) 50vw, 33vw"
+                alt="{{ $dateFormatted }}"
+                loading="eager"
+                decoding="async"
+                class="loaded">
             {{ else }}
-              {{ $encoded := $url | urlquery }}
-              {{ $src300 = printf "https://micro.blog/photos/200x/%s" $encoded }}
-              {{ $src600 = printf "https://micro.blog/photos/400x/%s" $encoded }}
-              {{ $tiny = printf "https://micro.blog/photos/40x/%s" $encoded }}
-              {{ $srcFull = $url }}
+              <img
+                src="{{ $tiny }}"
+                data-src="{{ $src300 }}"
+                data-srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
+                sizes="(max-width: 768px) 50vw, 33vw"
+                alt="{{ $dateFormatted }}"
+                loading="lazy"
+                decoding="async"
+                class="lqip">
             {{ end }}
+            <span class="date-badge">{{ $dateFormatted }}</span>
+          </a>
 
-            {{ partial "photo-tile.html" (dict "srcFull" $srcFull "src300" $src300 "src600" $src600 "tiny" $tiny "caption" $overlayCaption "dateFormatted" $dateFormatted "dateISO" $dateISO "year" $year "permalink" $p.RelPermalink "index" $imageIndex "eager" $eager) }}
-            {{ $imageIndex = add $imageIndex 1 }}
-          {{ end }}
-        {{ end }}
-
-        {{ $imgs := $p.Resources.ByType "image" }}
-        {{ range $img := $imgs }}
-          {{ $name := $img.Name | lower }}
-          {{ if not (or (hasPrefix $name "hero") (in $name "og-") (in $name "open-graph") (in $name "social") (in $name "thumb")) }}
-            {{ $w300 := $img.Fit "200x200 q85" }}
-            {{ $w600 := $img.Fit "400x400 q85" }}
-            {{ $w40 := $img.Fit "40x40 q50" }}
-            {{ $eager := lt $imageIndex 12 }}
-
-            {{ partial "photo-tile.html" (dict "srcFull" $img.RelPermalink "src300" $w300.RelPermalink "src600" $w600.RelPermalink "tiny" $w40.RelPermalink "caption" $overlayCaption "dateFormatted" $dateFormatted "dateISO" $dateISO "year" $year "permalink" $p.RelPermalink "index" $imageIndex "eager" $eager) }}
-            {{ $imageIndex = add $imageIndex 1 }}
-          {{ end }}
+          {{ $imageIndex = add $imageIndex 1 }}
         {{ end }}
       {{ end }}
-    </section>
+
+      {{ $imgs := $p.Resources.ByType "image" }}
+      {{ range $img := $imgs }}
+        {{ $name := $img.Name | lower }}
+        {{ if not (or (hasPrefix $name "hero") (in $name "og-") (in $name "open-graph") (in $name "social") (in $name "thumb")) }}
+          {{ $w300 := $img.Fit "200x200 q85" }}
+          {{ $w600 := $img.Fit "400x400 q85" }}
+          {{ $w40 := $img.Fit "40x40 q50" }}
+          {{ $eager := lt $imageIndex 12 }}
+
+          <a class="photo-tile"
+             href="{{ $p.RelPermalink }}"
+             aria-label="{{ $dateFormatted }}"
+             data-date="{{ $dateFormatted }}"
+             data-year="{{ $year }}">
+            {{ if $eager }}
+              <img
+                src="{{ $w300.RelPermalink }}"
+                srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
+                sizes="(max-width: 768px) 50vw, 33vw"
+                alt="{{ $dateFormatted }}"
+                loading="eager"
+                decoding="async"
+                class="loaded">
+            {{ else }}
+              <img
+                src="{{ $w40.RelPermalink }}"
+                data-src="{{ $w300.RelPermalink }}"
+                data-srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
+                sizes="(max-width: 768px) 50vw, 33vw"
+                alt="{{ $dateFormatted }}"
+                loading="lazy"
+                decoding="async"
+                class="lqip">
+            {{ end }}
+            <span class="date-badge">{{ $dateFormatted }}</span>
+          </a>
+
+          {{ $imageIndex = add $imageIndex 1 }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
   </div>
 
-  <div id="infiniteSentinel" aria-hidden="true"></div>
-
   <script>
-    (function () {
-      try {
-        // ====== Performance-Konstanten ======
-        const INITIAL_LOAD_COUNT = 36;
-        const BATCH_SIZE = 36;
-        const INTERSECTION_ROOT_MARGIN = '300px 0px';
-        const SENTINEL_ROOT_MARGIN = '400px 0px';
-        const NEAR_BOTTOM_THRESHOLD = 400;
-        const SCROLL_THROTTLE_MS = 180;
-        const MOBILE_SCROLL_DEBOUNCE_MS = 160;
-        const SCROLL_IDLE_UNLOCK_MS = 250;
-        const CLAMP_THROTTLE_MS = 80;
-        const CLAMP_TICK_TIMEOUT_MS = 120;
-        const BADGE_HIDE_TIMEOUT_MS = 3000;
-        const CLICK_SUPPRESS_MS = 450;
-        const JUMP_BUFFER_BEFORE = BATCH_SIZE * 2;
-        const JUMP_BUFFER_AFTER  = BATCH_SIZE * 4;
-        const MAX_VIRTUAL_WINDOW = BATCH_SIZE * 20;
+    // Simple, fast lazy loading mit Intersection Observer
+    (function() {
+      'use strict';
 
-        // ====== DOM-Referenzen ======
-        const grid        = document.getElementById('photoGrid');
-        if (!grid) return;
+      // Alle lazy Images
+      const lazyImages = document.querySelectorAll('img.lqip[data-src]');
 
-        const allTiles    = Array.from(grid.querySelectorAll('.photo-tile'));
-        const sentinel    = document.getElementById('infiniteSentinel');
-        const monthBadge  = document.getElementById('monthBadge');
-        const yearRail    = document.getElementById('yearRail');
-        const yearStrip   = yearRail?.querySelector('.year-rail-strip');
-        const yearRow     = document.getElementById('yearRow');
-        const gridWrapper = document.querySelector('.photo-grid-wrapper');
+      if (!lazyImages.length) return;
 
-        const params = new URLSearchParams(location.search);
-        const fmtMonthYear = new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' });
-        const fmtShortDate = new Intl.DateTimeFormat('de-DE', { day:'numeric', month:'short', year:'numeric' });
+      // Intersection Observer für performantes Lazy Loading
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
 
-        const years = Array.from(new Set(allTiles.map(t => t.dataset.year))).filter(Boolean).sort((a,b)=> b.localeCompare(a));
+          const img = entry.target;
+          const src = img.dataset.src;
+          const srcset = img.dataset.srcset;
 
-        // Virtual Scroll Range
-        let visibleRange = {
-          start: 0,
-          end: Math.min(allTiles.length, INITIAL_LOAD_COUNT)
-        };
-        const batchSize    = BATCH_SIZE;
+          if (!src) return;
 
-        // requestIdleCallback Polyfill/Wrapper
-        const scheduleIdleTask = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
-        const cancelIdleTask = window.cancelIdleCallback || clearTimeout;
+          // Volle Auflösung laden
+          const fullImg = new Image();
 
-        /* ====== Date-badges einmalig befüllen ====== */
-        function hydrateDateBadges(){
-          allTiles.forEach(t => {
-            const iso = t.dataset.dateIso;
-            const badge = t.querySelector('.date-badge');
-            if (!badge || !iso) return;
-            const d = new Date(iso + 'T00:00:00');
-            badge.textContent = fmtShortDate.format(d);
-          });
-        }
-
-        /* ====== URL-Sync ====== */
-        let isProgrammaticScroll = false;
-        let lastURLYear = null;
-        let scrollIdleTimer = null;
-        let urlSyncIdleTask = null;
-
-        function syncURLToCurrentYear(){
-          if (isProgrammaticScroll) return;
-          const { year } = getCurrent();
-          if (!year || year === lastURLYear) return;
-          if (urlSyncIdleTask) cancelIdleTask(urlSyncIdleTask);
-          urlSyncIdleTask = scheduleIdleTask(() => {
-            const url = new URL(location.href);
-            url.searchParams.set('year', year);
-            history.replaceState(null, '', url);
-            lastURLYear = year;
-            urlSyncIdleTask = null;
-          });
-        }
-
-        function scheduleUnlockAfterScrollIdle(){
-          if (!isProgrammaticScroll) return;
-          if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
-          scrollIdleTimer = setTimeout(()=>{ isProgrammaticScroll = false; syncURLToCurrentYear(); }, SCROLL_IDLE_UNLOCK_MS);
-        }
-
-        /* ====== Sichtbarkeit (Virtual Scroll) ====== */
-        function applyVisibility(){
-          allTiles.forEach((t, i) => {
-            const inRange = i >= visibleRange.start && i < visibleRange.end;
-            t.classList.toggle('hidden', !inRange);
-            t.style.contentVisibility = inRange ? 'visible' : 'auto';
-          });
-          hydrateVisibleImages();
-          updateBadge();
-
-          // Sichtbare Eager-Bilder sofort zeigen (Fail-safe)
-          grid.querySelectorAll('.photo-tile:not(.hidden) img[src]:not([data-src])')
-            .forEach(img => { img.closest('.photo-tile')?.classList.add('ready'); });
-        }
-
-        function loadMore() {
-          const before = visibleRange.end;
-          visibleRange.end = Math.min(allTiles.length, visibleRange.end + batchSize);
-          if (visibleRange.end === before) return;
-          applyVisibility();
-          syncURLToCurrentYear();
-        }
-
-        function loadBefore() {
-          if (visibleRange.start === 0) return;
-          const newStart = Math.max(0, visibleRange.start - batchSize);
-          visibleRange.start = newStart;
-          applyVisibility();
-          syncURLToCurrentYear();
-        }
-
-        /* ====== Aktuelle Position (Badge) ====== */
-        function getCurrent(){
-          if (visibleRange.end === 0) return { year:'', label:'' };
-
-          const badgeBottom = monthBadge.getBoundingClientRect().bottom + 4;
-          let candidate = null, bestDelta = Infinity;
-
-          for (let i = visibleRange.start; i < visibleRange.end; i++){
-            const t = allTiles[i];
-            if (!t || t.classList.contains('hidden')) continue;
-            const r = t.getBoundingClientRect();
-            const d = Math.abs(r.top - badgeBottom);
-            if (r.top >= badgeBottom - 1) { candidate = t; break; }
-            if (d < bestDelta) { bestDelta = d; candidate = t; }
-          }
-
-          const iso = candidate?.dataset.dateIso;
-          if (iso){
-            const d = new Date(iso + 'T00:00:00');
-            return { year: candidate.dataset.year, label: fmtMonthYear.format(d) };
-          }
-          return { year:'', label:'' };
-        }
-
-        function updateBadge(){
-          const { year, label } = getCurrent();
-          monthBadge.textContent = (yearRail.classList.contains('visible') && year) ? year : (label || '');
-        }
-
-        /* ====== Badge-Clamping ====== */
-        function clampBadgeToGridTop(){
-          const vv = window.visualViewport;
-          const css = getComputedStyle(document.documentElement);
-
-          const badgeMargin = parseFloat(css.getPropertyValue('--badge-margin')) || 0;
-          const vvOffsetTop = vv ? vv.offsetTop : 0;
-          const safeTopCSS  = parseFloat(css.getPropertyValue('--safe-top')) || 0;
-          const minTopSafe  = Math.max(0, vvOffsetTop + safeTopCSS + badgeMargin);
-
-          const gridRect    = gridWrapper.getBoundingClientRect();
-          const STOP_PAD    = 2;
-          const stopLine    = gridRect.top + STOP_PAD;
-
-          const badgeH      = monthBadge.offsetHeight || 40;
-          const viewportH   = vv ? vv.height : window.innerHeight;
-          const maxTop      = viewportH - badgeH - 8;
-
-          const desiredTop  = Math.min( Math.max(minTopSafe, stopLine), maxTop );
-
-          monthBadge.style.top = desiredTop + 'px';
-        }
-
-        /* ====== Year Rail ====== */
-        function buildYearRow(){
-          const cur = getCurrent().year || years[0];
-          yearRow.innerHTML = '';
-          years.forEach((y, idx) => {
-            const btn = document.createElement('button');
-            btn.className = 'pill ypill';
-            btn.textContent = y;
-            btn.dataset.year = y;
-            btn.setAttribute('aria-pressed', String(y === cur));
-            btn.style.setProperty('--i', idx);
-            yearRow.appendChild(btn);
-          });
-        }
-        function setRailFrameToBadge(){
-          const main     = document.querySelector('main.photos.content') || document.querySelector('main');
-          const mainRect = main.getBoundingClientRect();
-          const badgeRect= monthBadge.getBoundingClientRect();
-          yearRail.style.setProperty('--railLeft',  mainRect.left + 'px');
-          yearRail.style.setProperty('--railWidth', mainRect.width + 'px');
-          const stripH = yearStrip?.getBoundingClientRect().height || badgeRect.height;
-          const railTop = Math.round(badgeRect.top + (badgeRect.height - stripH)/2);
-          yearRail.style.setProperty('--railTop', (isFinite(railTop) ? railTop : badgeRect.top) + 'px');
-          const anchorX = Math.max(0, Math.min(mainRect.width, (badgeRect.left + badgeRect.width/2) - mainRect.left));
-          yearStrip?.style.setProperty('--anchorX', anchorX + 'px');
-        }
-        function openRail(){
-          buildYearRow();
-          if (yearStrip) yearStrip.style.visibility='hidden';
-          yearRail.classList.add('visible');
-          requestAnimationFrame(()=>{
-            setRailFrameToBadge();
-            monthBadge.classList.add('active');
-            yearRail.setAttribute('aria-hidden','false');
-            const curYear = getCurrent().year || years[0];
-            monthBadge.textContent = curYear;
-            if (yearStrip) yearStrip.style.visibility='';
-          });
-        }
-        function closeRail(){
-          yearRail.classList.remove('visible');
-          monthBadge.classList.remove('active');
-          yearRail.setAttribute('aria-hidden','true');
-          updateBadge();
-        }
-        monthBadge.addEventListener('click', (e)=>{
-          e.stopPropagation();
-          if (yearRail.classList.contains('visible')) closeRail();
-          else openRail();
-        });
-        document.addEventListener('click', (e)=>{
-          if (!yearRail.classList.contains('visible')) return;
-          if (!yearRail.contains(e.target) && e.target !== monthBadge) closeRail();
-        });
-        yearRow.addEventListener('click', async (e)=>{
-          const btn = e.target.closest('.ypill'); if (!btn) return;
-          await scrollToYear(btn.dataset.year);
-          closeRail();
-        });
-
-        async function scrollToYear(targetYear){
-          const index = allTiles.findIndex(t => t.dataset.year === targetYear);
-          if (index === -1) return;
-
-          isProgrammaticScroll = true;
-
-          // Fenster um das Ziel herum
-          visibleRange.start = Math.max(0, index - JUMP_BUFFER_BEFORE);
-          visibleRange.end   = Math.min(allTiles.length, index + JUMP_BUFFER_AFTER);
-
-          applyVisibility();
-
-          // Vorab-Bilder im Zielbereich aktivieren
-          const viewportHeight = window.innerHeight;
-          const estimatedTilesPerViewport = Math.ceil(viewportHeight / 140);
-          const tilesToPreload = estimatedTilesPerViewport * 3;
-
-          const preloadStart = Math.max(visibleRange.start, index);
-          const preloadEnd   = Math.min(visibleRange.end, index + tilesToPreload);
-
-          for (let i = preloadStart; i < preloadEnd; i++) {
-            const tile = allTiles[i];
-            const img = tile?.querySelector('img[data-src]');
-            if (img) activateImg(img);
-          }
-
-          await new Promise(r => requestAnimationFrame(r));
-
-          const anchor = allTiles[index];
-          if (anchor && !anchor.classList.contains('hidden')) {
-            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            anchor.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-          }
-
-          // SOFORT sichtbaren Bereich hydratisieren (wichtig bei „Sprung in die Mitte“)
-          hydrateVisibleImages();
-
-          const url = new URL(location.href);
-          url.searchParams.set('year', targetYear);
-          history.replaceState(null, '', url);
-          lastURLYear = targetYear;
-          scheduleUnlockAfterScrollIdle();
-        }
-
-        window.addEventListener('popstate', () => {
-          const sp = new URL(location.href).searchParams;
-          const y = sp.get('year'); if (!y) return;
-          isProgrammaticScroll = true;
-          scrollToYear(y);
-          scheduleUnlockAfterScrollIdle();
-        });
-
-        /* ====== Lazy ====== */
-        function activateImg(img){
-          if (!img || img.dataset.activated) return;
-
-          if (img.dataset.sizes && !img.sizes) img.sizes = img.dataset.sizes;
-          if (img.dataset.srcset && !img.srcset) { img.srcset = img.dataset.srcset; delete img.dataset.srcset; }
-          if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
-          img.dataset.activated = '1';
-          img.addEventListener('load', function(){
-            const t = img.closest('.photo-tile'); if (t) t.classList.add('ready');
+          fullImg.onload = () => {
+            // Smooth transition von Blur zu Sharp
+            img.src = src;
+            if (srcset) img.srcset = srcset;
             img.classList.remove('lqip');
-          }, { once:true });
-        }
+            img.classList.add('loaded');
 
-        // Distanz zum Viewport-Zentrum
-        function getViewportDistance(el) {
-          const r = el.getBoundingClientRect();
-          const c = window.innerHeight / 2;
-          return Math.abs((r.top + r.height/2) - c);
-        }
-
-        // Tiles im erweiterten Viewport
-        function getTilesInViewport(buffer = 2) {
-          const vh = window.innerHeight;
-          const top = 0, bottom = vh;
-          const buf = vh * buffer;
-          const res = [];
-
-          const start = Math.max(0, visibleRange.start - 50);
-          const end   = Math.min(allTiles.length, visibleRange.end + 50);
-
-          for (let i = start; i < end; i++) {
-            const t = allTiles[i];
-            const r = t.getBoundingClientRect();
-            if (r.bottom > top - buf && r.top < bottom + buf) {
-              res.push({ tile: t, index: i, rect: r, distance: getViewportDistance(t) });
-            }
-          }
-          return res;
-        }
-
-        function updateVisibleRangeFromViewport() {
-          const vis = getTilesInViewport(2);
-          if (vis.length === 0) return;
-
-          const idxs = vis.map(v => v.index);
-          const minI = Math.min(...idxs);
-          const maxI = Math.max(...idxs);
-
-          const newStart = Math.max(0, minI - BATCH_SIZE);
-          const newEnd   = Math.min(allTiles.length, maxI + BATCH_SIZE*2);
-
-          const size = newEnd - newStart;
-          if (size > MAX_VIRTUAL_WINDOW) {
-            const center = Math.floor((minI + maxI) / 2);
-            visibleRange.start = Math.max(0, center - Math.floor(MAX_VIRTUAL_WINDOW/2));
-            visibleRange.end   = Math.min(allTiles.length, visibleRange.start + MAX_VIRTUAL_WINDOW);
-          } else {
-            visibleRange.start = newStart;
-            visibleRange.end   = newEnd;
-          }
-        }
-
-        function hydrateVisibleImages(){
-          const vis = getTilesInViewport(1.5)
-            .map(v => {
-              const img = v.tile.querySelector('img[data-src]');
-              return img ? { img, distance: v.distance } : null;
-            })
-            .filter(Boolean)
-            .sort((a,b)=> a.distance - b.distance);
-
-          vis.forEach(v => activateImg(v.img));
-        }
-
-        // Observer beobachtet die TILES, nicht die IMGs
-        if ('IntersectionObserver' in window) {
-          const tileObserver = new IntersectionObserver((entries)=>{
-            for (const e of entries) {
-              if (!e.isIntersecting) continue;
-              const img = e.target.querySelector('img[data-src]');
-              if (img) activateImg(img);
-            }
-          }, { rootMargin: INTERSECTION_ROOT_MARGIN });
-
-          allTiles.forEach(t => tileObserver.observe(t));
-        }
-
-        /* ====== Infinite Scroll ====== */
-        const sentinelIO = new IntersectionObserver((entries)=>{
-          for (const e of entries) {
-            if (e.isIntersecting) {
-              loadMore();
-              requestAnimationFrame(()=> loadMore());
-            }
-          }
-        }, { rootMargin: SENTINEL_ROOT_MARGIN });
-        sentinelIO.observe(sentinel);
-
-        function nearBottom(px = NEAR_BOTTOM_THRESHOLD){
-          const doc = document.documentElement;
-          return (window.innerHeight + window.scrollY) >= (doc.scrollHeight - px);
-        }
-        function nearTop(px = NEAR_BOTTOM_THRESHOLD){
-          return window.scrollY <= px;
-        }
-
-        /* ====== Navigation ====== */
-        function go(tile){
-          const url = tile?.dataset?.url;
-          if (url) window.location.href = url;
-        }
-        const isTouch = 'ontouchstart' in window;
-
-        if (!isTouch) {
-          const GRID_COLS = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
-          allTiles.forEach(tile => {
-            tile.addEventListener('click', (e)=> {
-              if (tile._suppressNextClick) {
-                tile._suppressNextClick = false;
-                e.preventDefault();
-                return;
-              }
-              go(tile);
-            });
-            tile.addEventListener('keydown', (e)=>{
-              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(tile); return; }
-              const i = allTiles.indexOf(tile);
-              let t = -1;
-              switch(e.key) {
-                case 'ArrowRight': t = i+1; break;
-                case 'ArrowLeft':  t = i-1; break;
-                case 'ArrowDown':  t = i+GRID_COLS; break;
-                case 'ArrowUp':    t = i-GRID_COLS; break;
-                case 'Home':       t = 0; break;
-                case 'End':        t = allTiles.length-1; break;
-                default: return;
-              }
-              if (t>=0 && t<allTiles.length) {
-                e.preventDefault();
-                const target = allTiles[t];
-                if (target && !target.classList.contains('hidden')) {
-                  target.focus();
-                  target.scrollIntoView({ behavior:'smooth', block:'nearest' });
-                }
-              }
-            });
-          });
-        } else {
-          const showPreview = (tile) => {
-            const badge = tile.querySelector('.date-badge');
-            if (badge) {
-              badge.style.opacity = '1';
-              badge.style.transform = 'translateY(0)';
-            }
-            if (tile.dataset.hasCaption === '1') tile.classList.add('show-caption');
+            // Cleanup
+            delete img.dataset.src;
+            delete img.dataset.srcset;
           };
-          const hidePreview = (tile) => {
-            const badge = tile.querySelector('.date-badge');
-            if (badge) {
-              badge.style.opacity = '0';
-              badge.style.transform = 'translateY(-3px)';
-            }
-            tile.classList.remove('show-caption');
-            tile._armedOpen = false;
+
+          fullImg.onerror = () => {
+            // Fallback: zeige wenigstens das LQIP
+            img.classList.add('loaded');
           };
-          allTiles.forEach(tile => {
-            tile._armedOpen = false;
-            tile._hideTimer = null;
 
-            tile.addEventListener('touchstart', () => {
-              if (tile._armedOpen) { go(tile); return; }
-              showPreview(tile);
-              clearTimeout(tile._hideTimer);
-              tile._hideTimer = setTimeout(() => hidePreview(tile), BADGE_HIDE_TIMEOUT_MS);
-              tile._armedOpen = true;
-              tile._suppressNextClick = true;
-              setTimeout(() => tile._suppressNextClick = false, CLICK_SUPPRESS_MS);
-            }, { passive: true });
+          // Start loading
+          if (srcset) fullImg.srcset = srcset;
+          fullImg.src = src;
 
-            tile.addEventListener('click', (e) => {
-              if (tile._suppressNextClick) {
-                e.preventDefault();
-                e.stopPropagation();
-                tile._suppressNextClick = false;
-                return;
-              }
-              go(tile);
-            });
-          });
-        }
-
-        /* ====== Scroll-Handler ====== */
-        const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-        let scrollState = {
-          ticking: false,
-          lastClamp: 0,
-          timeout: null,
-          clampTicking: false,
-          lastScrollTS: 0,
-          loadMoreScheduled: false,
-          loadBeforeScheduled: false,
-          lastScrollY: window.scrollY,
-          lastScrollCheck: performance.now(),
-          velocity: 0
-        };
-
-        function eagerLoadOnFastScroll() {
-          const v = Math.abs(scrollState.velocity);
-          const TH = 800; if (v < TH) return;
-          const down = scrollState.velocity > 0;
-          const vh = window.innerHeight;
-          const tilesToPreload = Math.ceil(vh / 140) * Math.min(5, Math.ceil(v / TH));
-          const vis = getTilesInViewport(Math.min(5, Math.ceil(v / TH)))
-            .filter(item => {
-              const r = item.rect;
-              if (down) return r.top > -vh;
-              return r.bottom < vh * 2;
-            })
-            .map(item => item.tile.querySelector('img[data-src]'))
-            .filter(Boolean)
-            .slice(0, tilesToPreload);
-          vis.forEach(activateImg);
-        }
-
-        function performScrollUpdates() {
-          const now = performance.now();
-          if (!isMobileUA && (now - scrollState.lastClamp > 80)) {
-            clampBadgeToGridTop();
-            scrollState.lastClamp = now;
-          }
-          if (!isProgrammaticScroll) {
-            updateVisibleRangeFromViewport();
-            applyVisibility();
-          }
-          if (!isMobileUA) {
-            updateBadge();
-            if (yearRail.classList.contains('visible')) setRailFrameToBadge();
-            if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle(); else syncURLToCurrentYear();
-            hydrateVisibleImages();
-          }
-        }
-
-        function onScroll() {
-          const now = performance.now();
-          const y = window.scrollY;
-          const dY = y - scrollState.lastScrollY;
-          const dT = now - scrollState.lastScrollCheck;
-          if (dT > 0) scrollState.velocity = (dY / dT) * 1000;
-          scrollState.lastScrollY = y;
-          scrollState.lastScrollCheck = now;
-
-          clampBadgeToGridTop();
-          if (!isProgrammaticScroll) eagerLoadOnFastScroll();
-
-          if (nearBottom()) {
-            if (!scrollState.loadMoreScheduled) {
-              scrollState.loadMoreScheduled = true;
-              loadMore();
-              setTimeout(() => scrollState.loadMoreScheduled = false, SCROLL_THROTTLE_MS);
-            }
-          }
-          if (nearTop() && visibleRange.start > 0) {
-            if (!scrollState.loadBeforeScheduled) {
-              scrollState.loadBeforeScheduled = true;
-              loadBefore();
-              setTimeout(() => scrollState.loadBeforeScheduled = false, SCROLL_THROTTLE_MS);
-            }
-          }
-
-          if (isMobileUA) {
-            if (scrollState.timeout) clearTimeout(scrollState.timeout);
-            scrollState.timeout = setTimeout(() => {
-              if (!isProgrammaticScroll) { updateVisibleRangeFromViewport(); applyVisibility(); }
-              updateBadge();
-              if (yearRail.classList.contains('visible')) setRailFrameToBadge();
-              if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle(); else syncURLToCurrentYear();
-              hydrateVisibleImages();
-            }, MOBILE_SCROLL_DEBOUNCE_MS);
-          } else {
-            if (scrollState.ticking) return;
-            scrollState.ticking = true;
-            requestAnimationFrame(() => { performScrollUpdates(); scrollState.ticking = false; });
-          }
-
-          scrollState.lastScrollTS = performance.now();
-          if (!scrollState.clampTicking) {
-            scrollState.clampTicking = true;
-            requestAnimationFrame(function tick() {
-              if (!scrollState.clampTicking) return;
-              clampBadgeToGridTop();
-              if (performance.now() - scrollState.lastScrollTS > 120) { scrollState.clampTicking = false; return; }
-              requestAnimationFrame(tick);
-            });
-          }
-        }
-
-        // Event Listeners
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll, { passive: true });
-        window.addEventListener('wheel', clampBadgeToGridTop, { passive: true });
-        window.addEventListener('touchstart', clampBadgeToGridTop, { passive: true });
-        window.addEventListener('touchmove', clampBadgeToGridTop, { passive: true });
-
-        if (window.visualViewport) {
-          window.visualViewport.addEventListener('scroll', clampBadgeToGridTop, { passive: true });
-          window.visualViewport.addEventListener('resize', clampBadgeToGridTop, { passive: true });
-        }
-
-        /* ====== Initial ====== */
-        applyVisibility();
-        clampBadgeToGridTop();
-
-        // Eager-Bilder sofort zeigen
-        grid.querySelectorAll('img[src]:not([data-src])')
-          .forEach(img => { img.closest('.photo-tile')?.classList.add('ready'); });
-
-        const init = getCurrent();
-        lastURLYear = init.year || lastURLYear;
-
-        scheduleIdleTask(() => {
-          hydrateDateBadges();
-          syncURLToCurrentYear();
+          // Stop observing this image
+          observer.unobserve(img);
         });
+      }, {
+        // Lade Bilder 300px bevor sie in den Viewport kommen
+        rootMargin: '300px 0px',
+        threshold: 0.01
+      });
 
-        requestAnimationFrame(async () => {
-          const y = params.get('year');
-          if (y) await scrollToYear(y);
-        });
-      } catch(err){
-        console.error('photos page init error', err);
-        try {
-          document.querySelectorAll('.photo-tile').forEach(t => {
-            t.classList.add('ready');
-            t.style.contentVisibility='visible';
-          });
-        } catch {}
-      }
+      // Observe alle lazy images
+      lazyImages.forEach(img => imageObserver.observe(img));
+
+      // Preload images near viewport on fast scroll
+      let lastScrollY = window.scrollY;
+      let scrollVelocity = 0;
+      let scrollTimer;
+
+      const handleScroll = () => {
+        const currentScrollY = window.scrollY;
+        scrollVelocity = Math.abs(currentScrollY - lastScrollY);
+        lastScrollY = currentScrollY;
+
+        // Bei schnellem Scrollen: größerer Preload-Radius
+        if (scrollVelocity > 100) {
+          clearTimeout(scrollTimer);
+          scrollTimer = setTimeout(() => {
+            scrollVelocity = 0;
+          }, 150);
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        imageObserver.disconnect();
+      });
     })();
   </script>
 </main>
