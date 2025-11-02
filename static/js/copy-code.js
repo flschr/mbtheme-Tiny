@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const copyButton = document.createElement('button');
     copyButton.className = 'copy-code-button';
     copyButton.type = 'button';
-    copyButton.setAttribute('aria-label', 'Code kopieren');
-    copyButton.textContent = 'Kopieren';
+    copyButton.setAttribute('aria-label', 'Copy code');
+    copyButton.textContent = 'Copy';
 
     // Insert button before code block
     wrapper.insertBefore(copyButton, codeBlock);
@@ -31,20 +31,20 @@ document.addEventListener('DOMContentLoaded', function() {
       // Copy to clipboard
       navigator.clipboard.writeText(textToCopy).then(function() {
         // Success feedback
-        copyButton.textContent = 'Kopiert!';
+        copyButton.textContent = 'Copied!';
         copyButton.classList.add('copied');
 
         // Reset after 2 seconds
         setTimeout(function() {
-          copyButton.textContent = 'Kopieren';
+          copyButton.textContent = 'Copy';
           copyButton.classList.remove('copied');
         }, 2000);
       }).catch(function(err) {
         // Fallback for older browsers
         console.error('Copy failed:', err);
-        copyButton.textContent = 'Fehler';
+        copyButton.textContent = 'Error';
         setTimeout(function() {
-          copyButton.textContent = 'Kopieren';
+          copyButton.textContent = 'Copy';
         }, 2000);
       });
     });
