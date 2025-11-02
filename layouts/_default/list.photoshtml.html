@@ -53,15 +53,7 @@
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(to right, transparent, #ddd 20%, #ddd 80%, transparent);
-    }
-
-    .month-header::before {
-      background: linear-gradient(to left, #ddd, transparent);
-    }
-
-    .month-header::after {
-      background: linear-gradient(to right, #ddd, transparent);
+      background: #ddd;
     }
 
     /* Instagram-Style Grid */
@@ -174,11 +166,9 @@
       .month-header {
         color: #e5e7eb;
       }
-      .month-header::before {
-        background: linear-gradient(to left, #4b5563, transparent);
-      }
+      .month-header::before,
       .month-header::after {
-        background: linear-gradient(to right, #4b5563, transparent);
+        background: #4b5563;
       }
       .photo-tile {
         background: #1f2937;
