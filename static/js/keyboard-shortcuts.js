@@ -5,6 +5,9 @@
   let currentPostIndex = -1;
   let posts = [];
   let helpOverlay = null;
+  let previouslyFocusedElement = null;
+  let focusableElements = [];
+  let managedPageElements = [];
 
   // Initialisierung nach DOM-Load
   document.addEventListener('DOMContentLoaded', function() {
@@ -169,6 +172,8 @@
     helpOverlay.setAttribute('role', 'dialog');
     helpOverlay.setAttribute('aria-labelledby', 'shortcuts-title');
     helpOverlay.setAttribute('aria-modal', 'true');
+    helpOverlay.setAttribute('aria-hidden', 'true');
+    helpOverlay.setAttribute('tabindex', '-1');
 
     helpOverlay.innerHTML = `
       <div class="keyboard-help-content">
@@ -217,6 +222,7 @@
     `;
 
     document.body.appendChild(helpOverlay);
+    helpOverlay.style.display = 'none';
 
     // Close Button Event
     const closeBtn = helpOverlay.querySelector('.keyboard-help-close');
@@ -228,6 +234,8 @@
         closeHelpOverlay();
       }
     });
+
+    helpOverlay.addEventListener('keydown', trapFocusInsideOverlay);
   }
 
   function toggleHelpOverlay() {
@@ -239,11 +247,100 @@
   }
 
   function openHelpOverlay() {
+    previouslyFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    updateFocusableElements();
     helpOverlay.style.display = 'flex';
-    helpOverlay.querySelector('.keyboard-help-close').focus();
+    helpOverlay.setAttribute('aria-hidden', 'false');
+    setPageInert(true);
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    } else {
+      helpOverlay.focus();
+    }
   }
 
   function closeHelpOverlay() {
     helpOverlay.style.display = 'none';
+    helpOverlay.setAttribute('aria-hidden', 'true');
+    setPageInert(false);
+    if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+      previouslyFocusedElement.focus();
+    }
+  }
+
+  function updateFocusableElements() {
+    focusableElements = Array.from(
+      helpOverlay.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(function(element) {
+      return !element.hasAttribute('disabled') && !element.getAttribute('aria-hidden');
+    });
+  }
+
+  function trapFocusInsideOverlay(e) {
+    if (e.key !== 'Tab') {
+      return;
+    }
+
+    updateFocusableElements();
+    if (focusableElements.length === 0) {
+      e.preventDefault();
+      helpOverlay.focus();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    const isShiftPressed = e.shiftKey;
+    const activeElement = document.activeElement;
+
+    if (!isShiftPressed && activeElement === lastElement) {
+      e.preventDefault();
+      firstElement.focus();
+    } else if (isShiftPressed && activeElement === firstElement) {
+      e.preventDefault();
+      lastElement.focus();
+    }
+  }
+
+  function setPageInert(shouldInert) {
+    const bodyChildren = Array.from(document.body.children).filter(function(child) {
+      return child !== helpOverlay;
+    });
+
+    if (shouldInert) {
+      managedPageElements = bodyChildren.map(function(child) {
+        const record = {
+          element: child,
+          hadInert: 'inert' in child ? child.inert : null,
+          previousAriaHidden: child.getAttribute('aria-hidden')
+        };
+
+        if ('inert' in child) {
+          child.inert = true;
+        } else {
+          child.setAttribute('aria-hidden', 'true');
+        }
+
+        return record;
+      });
+    } else {
+      managedPageElements.forEach(function(record) {
+        const el = record.element;
+        if ('inert' in el && record.hadInert !== null) {
+          el.inert = record.hadInert;
+        }
+
+        if (!('inert' in el)) {
+          if (record.previousAriaHidden === null) {
+            el.removeAttribute('aria-hidden');
+          } else {
+            el.setAttribute('aria-hidden', record.previousAriaHidden);
+          }
+        }
+      });
+      managedPageElements = [];
+    }
   }
 })();
