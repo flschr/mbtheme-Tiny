@@ -87,6 +87,10 @@
 	box-sizing: border-box;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
 body {
 	max-width: 40em;
 	margin: 2em auto;
@@ -264,6 +268,11 @@ a.post-date,
 
 a.post-date:hover {
 	text-decoration: none;
+}
+
+.reading-time {
+	font-size: 0.8em;
+	color: var(--accent2);
 }
 
 .e-content {
@@ -459,6 +468,44 @@ span.tinylytics_uptime {
 pre {
 	overflow: auto;
 	padding: 1em;
+}
+
+/* Code block copy button */
+.code-block-wrapper {
+	position: relative;
+	margin: 1em 0;
+}
+
+.copy-code-button {
+	position: absolute;
+	top: 0.5em;
+	right: 0.5em;
+	padding: 0.4em 0.8em;
+	font-size: 0.75em;
+	font-family: var(--font_system_ui);
+	background-color: var(--accent2);
+	color: var(--background);
+	border: none;
+	border-radius: var(--radius-default);
+	cursor: pointer;
+	opacity: 0.7;
+	transition: opacity 0.2s ease, background-color 0.2s ease;
+	z-index: 10;
+}
+
+.copy-code-button:hover {
+	opacity: 1;
+	background-color: var(--link);
+}
+
+.copy-code-button:focus {
+	outline: 2px solid var(--link);
+	outline-offset: 2px;
+}
+
+.copy-code-button.copied {
+	background-color: #4caf50;
+	color: #fff;
 }
 
 
@@ -715,4 +762,39 @@ nav a:focus-visible {
 
 .tiny-text {
 	font-size: 0.6em;
+}
+
+
+/* ==========================================================================
+   BACK TO TOP BUTTON
+   ========================================================================== */
+
+.back-to-top {
+	position: fixed;
+	bottom: 2em;
+	right: 2em;
+	width: 2.5em;
+	height: 2.5em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--link);
+	color: var(--button-text);
+	font-size: 1.5em;
+	font-weight: bold;
+	text-decoration: none;
+	border-radius: var(--radius-default);
+	opacity: 0.6;
+	transition: opacity 0.3s ease;
+	z-index: 1000;
+}
+
+.back-to-top:hover {
+	opacity: 1;
+	color: var(--button-text);
+}
+
+.back-to-top:focus {
+	outline: 3px solid var(--link);
+	outline-offset: 2px;
 }
