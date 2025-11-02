@@ -5,6 +5,7 @@
   let currentPostIndex = -1;
   let posts = [];
   let photoTiles = [];
+  let monthSections = [];
   let helpOverlay = null;
   let previouslyFocusedElement = null;
   let focusableElements = [];
@@ -18,6 +19,7 @@
 
     // Sammle alle Fotos in der Galerie
     photoTiles = Array.from(document.querySelectorAll('.photo-tile'));
+    monthSections = Array.from(document.querySelectorAll('.month-section'));
 
     // Erstelle Hilfe-Overlay
     createHelpOverlay();
@@ -58,11 +60,17 @@
 
       case 'n':
         e.preventDefault();
+        if (photoTiles.length > 0 && navigateToMonth('next')) {
+          return;
+        }
         navigateToPage('next');
         break;
 
       case 'p':
         e.preventDefault();
+        if (photoTiles.length > 0 && navigateToMonth('prev')) {
+          return;
+        }
         navigateToPage('prev');
         break;
 
@@ -219,6 +227,64 @@
     return false;
   }
 
+  function navigateToMonth(direction) {
+    if (monthSections.length === 0) {
+      return false;
+    }
+
+    const activeIndex = getActiveMonthIndex();
+    let targetIndex = activeIndex;
+
+    if (direction === 'next' && activeIndex < monthSections.length - 1) {
+      targetIndex = activeIndex + 1;
+    } else if (direction === 'prev' && activeIndex > 0) {
+      targetIndex = activeIndex - 1;
+    } else {
+      return false;
+    }
+
+    const targetSection = monthSections[targetIndex];
+    const header = targetSection.querySelector('.month-header');
+    const targetElement = header || targetSection;
+
+    if (targetElement) {
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+
+    const firstTile = targetSection.querySelector('.photo-tile');
+    if (firstTile) {
+      const tileIndex = photoTiles.indexOf(firstTile);
+      if (tileIndex !== -1) {
+        currentPhotoIndex = tileIndex;
+        if (typeof firstTile.focus === 'function') {
+          firstTile.focus({ preventScroll: true });
+        }
+        highlightPhoto(firstTile);
+      }
+    }
+
+    return true;
+  }
+
+  function getActiveMonthIndex() {
+    const scrollPosition = window.scrollY;
+    let activeIndex = 0;
+
+    monthSections.forEach(function(section, index) {
+      const rect = section.getBoundingClientRect();
+      const offsetTop = rect.top + window.scrollY;
+
+      if (offsetTop - 100 <= scrollPosition) {
+        activeIndex = index;
+      }
+    });
+
+    return activeIndex;
+  }
+
   // Scroll nach oben
   function scrollToTop() {
     window.scrollTo({
@@ -263,10 +329,10 @@
               <dd>Vorheriger Beitrag/Foto</dd>
 
               <dt><kbd>n</kbd></dt>
-              <dd>Nächste Seite</dd>
+              <dd>Nächste Seite/Monat</dd>
 
               <dt><kbd>p</kbd></dt>
-              <dd>Vorherige Seite</dd>
+              <dd>Vorherige Seite/Monat</dd>
 
               <dt><kbd>h</kbd></dt>
               <dd>Zur Startseite</dd>
