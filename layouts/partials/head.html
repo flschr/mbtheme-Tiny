@@ -33,13 +33,8 @@
   
   <!-- Social Media Meta Tags -->
   {{ $ogAlt := "" }}
-  {{ with .Params.opengraph.alt }}
+  {{ with .Title }}
     {{ $ogAlt = . }}
-  {{ end }}
-  {{ if not $ogAlt }}
-    {{ with .Title }}
-      {{ $ogAlt = . }}
-    {{ end }}
   {{ end }}
   {{ if not $ogAlt }}
     {{ with .Site.Params.opengraph.altFallback }}
