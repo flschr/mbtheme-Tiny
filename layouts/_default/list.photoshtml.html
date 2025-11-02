@@ -2,10 +2,10 @@
 <main class="photos content" aria-label="Foto-Archiv">
   <style>
     :root {
-      --gap: 4px;
-      --tile-size: 140px;
-      --max-width: 1200px;
-      --radius: 4px;
+      --gap: 8px;
+      --column-width: 280px;
+      --max-width: 1400px;
+      --radius: 6px;
     }
 
     .photos.content {
@@ -13,55 +13,60 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Instagram-Style Grid */
+    /* Masonry Grid Container */
     .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(var(--tile-size), 1fr));
-      gap: var(--gap);
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 0;
+      padding: var(--gap);
+    }
+
+    /* Masonry wird die Positionierung übernehmen */
+    .photo-grid::after {
+      content: '';
+      display: block;
+      clear: both;
     }
 
     @media (max-width: 768px) {
       :root {
-        --gap: 3px;
-        --tile-size: 120px;
+        --gap: 6px;
+        --column-width: 200px;
       }
     }
 
     @media (max-width: 480px) {
       :root {
-        --gap: 2px;
-        --tile-size: 100px;
+        --gap: 4px;
+        --column-width: 160px;
       }
     }
 
-    /* Photo Tiles */
+    /* Photo Tiles - Masonry Items */
     .photo-tile {
+      width: var(--column-width);
+      margin-bottom: var(--gap);
       position: relative;
-      aspect-ratio: 1;
       overflow: hidden;
       background: #f3f4f6;
       cursor: pointer;
       border-radius: var(--radius);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
+      display: block;
     }
 
     .photo-tile:hover {
-      transform: scale(1.02);
-      box-shadow: 0 8px 24px rgba(0,0,0,.15);
-      z-index: 1;
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0,0,0,.2);
+      z-index: 10;
     }
 
     .photo-tile:active {
-      transform: scale(0.98);
+      transform: translateY(-2px);
     }
 
     .photo-tile img {
       width: 100%;
-      height: 100%;
-      object-fit: cover;
+      height: auto;
       display: block;
       transition: opacity 0.3s ease;
     }
@@ -160,14 +165,14 @@
           {{ $src300 := "" }}{{ $src600 := "" }}{{ $tiny := "" }}
 
           {{ if $isMBPhotos }}
-            {{ $src300 = replaceRE `/photos/[^/]+/` "/photos/200x/" $url }}
-            {{ $src600 = replaceRE `/photos/[^/]+/` "/photos/400x/" $url }}
-            {{ $tiny = replaceRE `/photos/[^/]+/` "/photos/40x/" $url }}
+            {{ $src300 = replaceRE `/photos/[^/]+/` "/photos/300w/" $url }}
+            {{ $src600 = replaceRE `/photos/[^/]+/` "/photos/600w/" $url }}
+            {{ $tiny = replaceRE `/photos/[^/]+/` "/photos/40w/" $url }}
           {{ else }}
             {{ $encoded := $url | urlquery }}
-            {{ $src300 = printf "https://micro.blog/photos/200x/%s" $encoded }}
-            {{ $src600 = printf "https://micro.blog/photos/400x/%s" $encoded }}
-            {{ $tiny = printf "https://micro.blog/photos/40x/%s" $encoded }}
+            {{ $src300 = printf "https://micro.blog/photos/300w/%s" $encoded }}
+            {{ $src600 = printf "https://micro.blog/photos/600w/%s" $encoded }}
+            {{ $tiny = printf "https://micro.blog/photos/40w/%s" $encoded }}
           {{ end }}
 
           <a class="photo-tile"
@@ -178,8 +183,8 @@
             {{ if $eager }}
               <img
                 src="{{ $src300 }}"
-                srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
-                sizes="(max-width: 768px) 50vw, 33vw"
+                srcset="{{ $src300 }} 300w, {{ $src600 }} 600w"
+                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
                 alt="{{ $dateFormatted }}"
                 loading="eager"
                 decoding="async"
@@ -188,8 +193,8 @@
               <img
                 src="{{ $tiny }}"
                 data-src="{{ $src300 }}"
-                data-srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
-                sizes="(max-width: 768px) 50vw, 33vw"
+                data-srcset="{{ $src300 }} 300w, {{ $src600 }} 600w"
+                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
                 alt="{{ $dateFormatted }}"
                 decoding="async"
                 class="lqip">
@@ -205,9 +210,9 @@
       {{ range $img := $imgs }}
         {{ $name := $img.Name | lower }}
         {{ if not (or (hasPrefix $name "hero") (in $name "og-") (in $name "open-graph") (in $name "social") (in $name "thumb")) }}
-          {{ $w300 := $img.Fit "200x200 q85" }}
-          {{ $w600 := $img.Fit "400x400 q85" }}
-          {{ $w40 := $img.Fit "40x40 q50" }}
+          {{ $w300 := $img.Resize "300x q85" }}
+          {{ $w600 := $img.Resize "600x q85" }}
+          {{ $w40 := $img.Resize "40x q50" }}
           {{ $eager := lt $imageIndex 12 }}
 
           <a class="photo-tile"
@@ -218,8 +223,8 @@
             {{ if $eager }}
               <img
                 src="{{ $w300.RelPermalink }}"
-                srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
-                sizes="(max-width: 768px) 50vw, 33vw"
+                srcset="{{ $w300.RelPermalink }} 300w, {{ $w600.RelPermalink }} 600w"
+                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
                 alt="{{ $dateFormatted }}"
                 loading="eager"
                 decoding="async"
@@ -228,8 +233,8 @@
               <img
                 src="{{ $w40.RelPermalink }}"
                 data-src="{{ $w300.RelPermalink }}"
-                data-srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
-                sizes="(max-width: 768px) 50vw, 33vw"
+                data-srcset="{{ $w300.RelPermalink }} 300w, {{ $w600.RelPermalink }} 600w"
+                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
                 alt="{{ $dateFormatted }}"
                 decoding="async"
                 class="lqip">
@@ -243,18 +248,32 @@
     {{ end }}
   </div>
 
+  <!-- Masonry.js -->
+  <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
+  <script src="https://unpkg.com/imagesloaded@5.0.0/imagesloaded.pkgd.min.js"></script>
+
   <script>
-    // Viewport-basiertes Lazy Loading - nur sichtbare Bilder
     (function() {
       'use strict';
 
+      const grid = document.querySelector('.photo-grid');
+      if (!grid) return;
+
+      // Masonry initialisieren
+      const msnry = new Masonry(grid, {
+        itemSelector: '.photo-tile',
+        columnWidth: '.photo-tile',
+        gutter: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 8,
+        percentPosition: false,
+        transitionDuration: '0.3s',
+        initLayout: true
+      });
+
+      // Lazy Loading für Bilder außerhalb des Viewports
       const lazyImages = document.querySelectorAll('img.lqip[data-src]');
-      if (!lazyImages.length) return;
-
       let loadingCount = 0;
-      const maxConcurrent = 4;
+      const maxConcurrent = 6;
 
-      // Lade ein einzelnes Bild
       function loadImage(img) {
         if (img.dataset.loading || !img.dataset.src) return;
 
@@ -263,9 +282,10 @@
 
         const src = img.dataset.src;
         const srcset = img.dataset.srcset;
-        const fullImg = new Image();
+        const tile = img.closest('.photo-tile');
 
-        fullImg.onload = fullImg.onerror = () => {
+        const fullImg = new Image();
+        fullImg.onload = () => {
           img.src = src;
           if (srcset) img.srcset = srcset;
           img.classList.remove('lqip');
@@ -276,13 +296,25 @@
           delete img.dataset.loading;
 
           loadingCount--;
+
+          // Masonry Layout nach Bildladen aktualisieren
+          if (tile) {
+            imagesLoaded(tile, function() {
+              msnry.layout();
+            });
+          }
+        };
+
+        fullImg.onerror = () => {
+          delete img.dataset.loading;
+          loadingCount--;
         };
 
         if (srcset) fullImg.srcset = srcset;
         fullImg.src = src;
       }
 
-      // IntersectionObserver - nur Bilder nahe dem Viewport
+      // IntersectionObserver für Lazy Loading
       const imageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting && loadingCount < maxConcurrent) {
@@ -293,12 +325,29 @@
           }
         });
       }, {
-        rootMargin: '150px 0px',
+        rootMargin: '200px 0px',
         threshold: 0.01
       });
 
-      // Beobachte alle Bilder
+      // Beobachte alle lazy Images
       lazyImages.forEach(img => imageObserver.observe(img));
+
+      // Initial Layout nach dem Laden aller eager Bilder
+      imagesLoaded(grid, function() {
+        msnry.layout();
+      });
+
+      // Layout bei Fenstergrößenänderung aktualisieren
+      let resizeTimeout;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+          // Gutter neu berechnen
+          const newGutter = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 8;
+          msnry.options.gutter = newGutter;
+          msnry.layout();
+        }, 250);
+      });
 
       // Cleanup
       window.addEventListener('beforeunload', () => {
