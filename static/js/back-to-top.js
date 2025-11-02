@@ -4,14 +4,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (!backToTopButton) return;
 
-  // Show button after scrolling down 300px
-  const scrollThreshold = 300;
-
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > scrollThreshold) {
-      backToTopButton.classList.add('visible');
-    } else {
-      backToTopButton.classList.remove('visible');
-    }
-  });
+  backToTopButton.classList.add('visible');
 });
