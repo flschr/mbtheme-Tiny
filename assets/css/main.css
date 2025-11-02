@@ -650,8 +650,7 @@ iframe {
 /* Skip to main content link */
 .skip-link {
 	position: absolute;
-	top: -40px;
-	left: 0;
+	left: -9999px;
 	background: var(--link);
 	color: var(--button-text);
 	padding: 8px 16px;
@@ -661,6 +660,7 @@ iframe {
 }
 
 .skip-link:focus {
+	left: 0;
 	top: 0;
 }
 
