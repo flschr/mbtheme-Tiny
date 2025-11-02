@@ -1,7 +1,8 @@
 {{ define "main" }}
 <link rel="stylesheet" href="/css/photos.css">
 
-<main class="photos content" aria-label="Foto-Archiv">
+<div class="photos content">
+  <h1 class="sr-only">Foto-Archiv</h1>
 
   {{ $pages := sort (where .Site.RegularPages "Type" "in" (slice "post" "photo")) "Date" "desc" }}
   {{ $.Scratch.Set "currentMonth" "" }}
@@ -104,5 +105,5 @@
     </div>
   {{ end }}
 
-</main>
+</div>
 {{ end }}
