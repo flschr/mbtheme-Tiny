@@ -27,6 +27,7 @@
 
 {{- $decoding := "async" -}}
 {{- $fetchpriority := cond $isLCP "high" "" -}}
+{{- $loading := cond $isLCP "eager" "lazy" -}}
 
 {{- if $res -}}
   {{/* Lokales Bild: responsive Derivate */}}
@@ -44,6 +45,7 @@
     width="{{ $default.Width }}" height="{{ $default.Height }}"
     decoding="{{ $decoding }}"
     {{ if $fetchpriority }}fetchpriority="{{ $fetchpriority }}"{{ end }}
+    loading="{{ $loading }}"
     alt="{{ $alt }}"
     {{ with $title }}title="{{ . }}"{{ end }}>
 {{- else -}}
@@ -74,6 +76,7 @@
     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 95vw, 720px"
     decoding="{{ $decoding }}"
     {{ if $fetchpriority }}fetchpriority="{{ $fetchpriority }}"{{ end }}
+    loading="{{ $loading }}"
     alt="{{ $alt }}"
     {{ with $title }}title="{{ . }}"{{ end }}>
 {{- end -}}
