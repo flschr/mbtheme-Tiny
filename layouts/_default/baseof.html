@@ -20,9 +20,32 @@
 
   <a href="#" class="back-to-top" aria-label="Back to top">↑</a>
 
-  <script src="/js/copy-code.js"></script>
-  <script src="/js/keyboard-shortcuts.js"></script>
-  <script src="/js/back-to-top.js"></script>
+  <!-- JavaScript with fingerprinting for cache busting -->
+  {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
+
+  {{ $copyCodeJs := resources.Get "js/copy-code.js" }}
+  {{ if $copyCodeJs }}
+    {{ $copyCodeJs = $copyCodeJs | minify | fingerprint "sha256" }}
+    <script src="{{ $copyCodeJs.RelPermalink }}" integrity="{{ $copyCodeJs.Data.Integrity }}" crossorigin="anonymous"></script>
+  {{ else }}
+    <script src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
+  {{ end }}
+
+  {{ $keyboardJs := resources.Get "js/keyboard-shortcuts.js" }}
+  {{ if $keyboardJs }}
+    {{ $keyboardJs = $keyboardJs | minify | fingerprint "sha256" }}
+    <script src="{{ $keyboardJs.RelPermalink }}" integrity="{{ $keyboardJs.Data.Integrity }}" crossorigin="anonymous"></script>
+  {{ else }}
+    <script src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
+  {{ end }}
+
+  {{ $backToTopJs := resources.Get "js/back-to-top.js" }}
+  {{ if $backToTopJs }}
+    {{ $backToTopJs = $backToTopJs | minify | fingerprint "sha256" }}
+    <script src="{{ $backToTopJs.RelPermalink }}" integrity="{{ $backToTopJs.Data.Integrity }}" crossorigin="anonymous"></script>
+  {{ else }}
+    <script src="{{ "/js/back-to-top.js" | relURL }}?v={{ $buildHash }}"></script>
+  {{ end }}
 
   {{ range .Site.Params.plugins_js }}
   <script src="{{ . }}"></script>
