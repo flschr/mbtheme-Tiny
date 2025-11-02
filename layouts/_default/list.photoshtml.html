@@ -191,7 +191,6 @@
                 data-srcset="{{ $src300 }} 200w, {{ $src600 }} 400w"
                 sizes="(max-width: 768px) 50vw, 33vw"
                 alt="{{ $dateFormatted }}"
-                loading="lazy"
                 decoding="async"
                 class="lqip">
             {{ end }}
@@ -232,7 +231,6 @@
                 data-srcset="{{ $w300.RelPermalink }} 200w, {{ $w600.RelPermalink }} 400w"
                 sizes="(max-width: 768px) 50vw, 33vw"
                 alt="{{ $dateFormatted }}"
-                loading="lazy"
                 decoding="async"
                 class="lqip">
             {{ end }}
@@ -246,84 +244,142 @@
   </div>
 
   <script>
-    // Simple, fast lazy loading mit Intersection Observer
+    // Viewport-basiertes Lazy Loading mit Priorisierung
     (function() {
       'use strict';
 
-      // Alle lazy Images
       const lazyImages = document.querySelectorAll('img.lqip[data-src]');
-
       if (!lazyImages.length) return;
 
-      // Intersection Observer für performantes Lazy Loading
-      const imageObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
+      // Lade-Queue nach Priorität
+      const loadQueue = new Map();
+      let isLoading = false;
+      const maxConcurrent = 6; // Parallel Loads
+      let loadingCount = 0;
 
-          const img = entry.target;
+      // Berechne Distanz zum Viewport
+      function getViewportDistance(img) {
+        const rect = img.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+
+        if (rect.top >= 0 && rect.bottom <= viewportHeight) {
+          return 0; // Im Viewport
+        }
+
+        if (rect.top < 0) {
+          return Math.abs(rect.top); // Über dem Viewport
+        }
+
+        return rect.top - viewportHeight; // Unter dem Viewport
+      }
+
+      // Lade ein einzelnes Bild
+      function loadImage(img) {
+        if (img.dataset.loading || !img.dataset.src) return Promise.resolve();
+
+        img.dataset.loading = 'true';
+        loadingCount++;
+
+        return new Promise((resolve) => {
           const src = img.dataset.src;
           const srcset = img.dataset.srcset;
-
-          if (!src) return;
-
-          // Volle Auflösung laden
           const fullImg = new Image();
 
-          fullImg.onload = () => {
-            // Smooth transition von Blur zu Sharp
+          fullImg.onload = fullImg.onerror = () => {
             img.src = src;
             if (srcset) img.srcset = srcset;
             img.classList.remove('lqip');
             img.classList.add('loaded');
 
-            // Cleanup
             delete img.dataset.src;
             delete img.dataset.srcset;
+            delete img.dataset.loading;
+
+            loadingCount--;
+            resolve();
           };
 
-          fullImg.onerror = () => {
-            // Fallback: zeige wenigstens das LQIP
-            img.classList.add('loaded');
-          };
-
-          // Start loading
           if (srcset) fullImg.srcset = srcset;
           fullImg.src = src;
+        });
+      }
 
-          // Stop observing this image
-          observer.unobserve(img);
+      // Verarbeite Lade-Queue
+      async function processQueue() {
+        if (isLoading) return;
+        isLoading = true;
+
+        // Sortiere nach Viewport-Distanz
+        const sorted = Array.from(loadQueue.values()).sort((a, b) => {
+          return getViewportDistance(a) - getViewportDistance(b);
+        });
+
+        // Lade die nächsten Bilder parallel
+        while (sorted.length > 0 && loadingCount < maxConcurrent) {
+          const img = sorted.shift();
+          if (img && img.dataset.src) {
+            loadQueue.delete(img);
+            loadImage(img);
+          }
+        }
+
+        isLoading = false;
+
+        // Wenn noch Bilder in der Queue, weiter verarbeiten
+        if (loadQueue.size > 0) {
+          requestAnimationFrame(processQueue);
+        }
+      }
+
+      // IntersectionObserver
+      const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          const img = entry.target;
+
+          if (entry.isIntersecting) {
+            // Bild ist sichtbar oder nah dran - zur Queue hinzufügen
+            if (img.dataset.src && !img.dataset.loading) {
+              loadQueue.set(img, img);
+              processQueue();
+            }
+          } else {
+            // Bild ist weit weg - aus Queue entfernen (falls noch nicht geladen)
+            if (getViewportDistance(img) > 1000) {
+              loadQueue.delete(img);
+            }
+          }
         });
       }, {
-        // Lade Bilder 300px bevor sie in den Viewport kommen
-        rootMargin: '300px 0px',
+        rootMargin: '400px 0px', // Größerer Preload-Bereich
         threshold: 0.01
       });
 
-      // Observe alle lazy images
+      // Beobachte alle Bilder
       lazyImages.forEach(img => imageObserver.observe(img));
 
-      // Preload images near viewport on fast scroll
-      let lastScrollY = window.scrollY;
-      let scrollVelocity = 0;
-      let scrollTimer;
+      // Initial Load für sichtbare Bilder
+      requestAnimationFrame(() => {
+        lazyImages.forEach(img => {
+          const distance = getViewportDistance(img);
+          if (distance < 600 && img.dataset.src) {
+            loadQueue.set(img, img);
+          }
+        });
+        processQueue();
+      });
 
-      const handleScroll = () => {
-        const currentScrollY = window.scrollY;
-        scrollVelocity = Math.abs(currentScrollY - lastScrollY);
-        lastScrollY = currentScrollY;
+      // Scroll-Handler für Re-Priorisierung
+      let scrollTimeout;
+      window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          if (loadQueue.size > 0) {
+            processQueue();
+          }
+        }, 100);
+      }, { passive: true });
 
-        // Bei schnellem Scrollen: größerer Preload-Radius
-        if (scrollVelocity > 100) {
-          clearTimeout(scrollTimer);
-          scrollTimer = setTimeout(() => {
-            scrollVelocity = 0;
-          }, 150);
-        }
-      };
-
-      window.addEventListener('scroll', handleScroll, { passive: true });
-
-      // Cleanup on page unload
+      // Cleanup
       window.addEventListener('beforeunload', () => {
         imageObserver.disconnect();
       });
