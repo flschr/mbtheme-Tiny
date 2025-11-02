@@ -30,6 +30,14 @@
       const docElement = document.documentElement;
       const body = document.body;
       const scrollTop = docElement.scrollTop || body.scrollTop;
+      const docHeight = docElement.scrollHeight - docElement.clientHeight;
+
+      if (docHeight > 0) {
+        const progress = Math.min((scrollTop / docHeight) * 100, 100);
+        mybutton.style.setProperty("--scroll-progress", `${progress}%`);
+      } else {
+        mybutton.style.setProperty("--scroll-progress", "100%");
+      }
 
       if (scrollTop > 20) {
         mybutton.style.display = "flex";
