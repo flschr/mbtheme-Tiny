@@ -43,7 +43,7 @@
     @media (max-width: 768px){ .photo-grid{ gap: var(--grid-gap-tablet); } }
     @media (max-width: 480px){ .photo-grid{ gap: var(--grid-gap-mobile); } }
 
-    /* Container Queries (progressive enhancement) */
+    /* Container Queries */
     @container photo-grid-wrapper (max-width: 768px) {
       .photo-grid{ gap: var(--grid-gap-tablet); }
     }
@@ -61,9 +61,9 @@
       transition: opacity var(--transition-normal), transform 0.1s ease, box-shadow var(--transition-fast);
       opacity: 0; /* wird durch .ready aufgehoben */
       border-radius: var(--tile-border-radius);
-      content-visibility: auto;
 
-      /* Fix: Intrinsische Größe für korrekte Lazy-Activation auch bei Sprüngen */
+      /* Performance + Platzhaltergröße */
+      content-visibility: auto;
       contain-intrinsic-size: 220px 220px;
     }
     .photo-tile.ready{ opacity: 1; }
@@ -103,7 +103,7 @@
       .pill{ background: rgba(255,255,255,.95); color:#111827; border-color:#e5e7eb; }
     }
 
-    /* ====== FIXED Datumspille (mit stabilem Top-Update) ====== */
+    /* ====== FIXED Datumspille ====== */
     .month-badge{
       position: fixed;
       left: 50%;
@@ -111,7 +111,7 @@
       top: calc(var(--safe-top) + var(--badge-margin));
       z-index: 12;
       cursor: pointer;
-      will-change: top; /* wichtig für ruckelfreies Clamping */
+      will-change: top;
     }
     .month-badge.active{ box-shadow:0 0 0 3px rgba(59,130,246,.35); }
 
@@ -172,12 +172,11 @@
     .photo-tile[data-has-caption="1"]:focus-visible::after{
       opacity:1; transform: translateY(0);
     }
-    /* optional fürs Mobile-Vorschau-Feature (falls genutzt) */
     .photo-tile.show-caption[data-has-caption="1"]::after{
       opacity:1; transform: translateY(0);
     }
 
-    /* Mini-Datum oben rechts – Hover/Fokus (Desktop) / Tap (Mobile) */
+    /* Mini-Datum oben rechts */
     .photo-tile .date-badge{
       position: absolute;
       top: 0.5rem;
@@ -288,9 +287,9 @@
         const CLAMP_TICK_TIMEOUT_MS = 120;
         const BADGE_HIDE_TIMEOUT_MS = 3000;
         const CLICK_SUPPRESS_MS = 450;
-        const JUMP_BUFFER_BEFORE = BATCH_SIZE * 2;  // 72 Tiles beim Jahr-Sprung
-        const JUMP_BUFFER_AFTER = BATCH_SIZE * 4;   // 144 Tiles beim Jahr-Sprung
-        const MAX_VIRTUAL_WINDOW = BATCH_SIZE * 20; // Max 720 Tiles gleichzeitig
+        const JUMP_BUFFER_BEFORE = BATCH_SIZE * 2;
+        const JUMP_BUFFER_AFTER  = BATCH_SIZE * 4;
+        const MAX_VIRTUAL_WINDOW = BATCH_SIZE * 20;
 
         // ====== DOM-Referenzen ======
         const grid        = document.getElementById('photoGrid');
@@ -310,7 +309,7 @@
 
         const years = Array.from(new Set(allTiles.map(t => t.dataset.year))).filter(Boolean).sort((a,b)=> b.localeCompare(a));
 
-        // Virtual Scroll Range (statt nur visibleCount)
+        // Virtual Scroll Range
         let visibleRange = {
           start: 0,
           end: Math.min(allTiles.length, INITIAL_LOAD_COUNT)
@@ -333,7 +332,7 @@
           });
         }
 
-        /* ====== URL-Sync (mit requestIdleCallback) ====== */
+        /* ====== URL-Sync ====== */
         let isProgrammaticScroll = false;
         let lastURLYear = null;
         let scrollIdleTimer = null;
@@ -343,8 +342,6 @@
           if (isProgrammaticScroll) return;
           const { year } = getCurrent();
           if (!year || year === lastURLYear) return;
-
-          // URL-Update im Idle ausführen
           if (urlSyncIdleTask) cancelIdleTask(urlSyncIdleTask);
           urlSyncIdleTask = scheduleIdleTask(() => {
             const url = new URL(location.href);
@@ -366,6 +363,7 @@
           allTiles.forEach((t, i) => {
             const inRange = i >= visibleRange.start && i < visibleRange.end;
             t.classList.toggle('hidden', !inRange);
+            t.style.contentVisibility = inRange ? 'visible' : 'auto';
           });
           hydrateVisibleImages();
           updateBadge();
@@ -378,7 +376,6 @@
         let prefetchIdleTask = null;
         function prefetchNext(){
           if (prefetchIdleTask) cancelIdleTask(prefetchIdleTask);
-
           prefetchIdleTask = scheduleIdleTask(() => {
             const start = visibleRange.end;
             const end   = Math.min(allTiles.length, visibleRange.end + prefetchAhead);
@@ -410,7 +407,7 @@
           syncURLToCurrentYear();
         }
 
-        /* ====== Aktuelle Position (an der Pille) ====== */
+        /* ====== Aktuelle Position (Badge) ====== */
         function getCurrent(){
           if (visibleRange.end === 0) return { year:'', label:'' };
 
@@ -439,7 +436,7 @@
           monthBadge.textContent = (yearRail.classList.contains('visible') && year) ? year : (label || '');
         }
 
-        /* ====== Hartes Clamping gegen Bounce in den Header ====== */
+        /* ====== Badge-Clamping ====== */
         function clampBadgeToGridTop(){
           const vv = window.visualViewport;
           const css = getComputedStyle(document.documentElement);
@@ -449,7 +446,6 @@
           const safeTopCSS  = parseFloat(css.getPropertyValue('--safe-top')) || 0;
           const minTopSafe  = Math.max(0, vvOffsetTop + safeTopCSS + badgeMargin);
 
-          // Stop-Linie = Oberkante des Foto-Grids (+ minimaler Puffer)
           const gridRect    = gridWrapper.getBoundingClientRect();
           const STOP_PAD    = 2;
           const stopLine    = gridRect.top + STOP_PAD;
@@ -529,29 +525,27 @@
 
           isProgrammaticScroll = true;
 
-          // Virtual Scroll: Lade nur ein Fenster um das Ziel herum
+          // Fenster um das Ziel herum
           visibleRange.start = Math.max(0, index - JUMP_BUFFER_BEFORE);
-          visibleRange.end = Math.min(allTiles.length, index + JUMP_BUFFER_AFTER);
+          visibleRange.end   = Math.min(allTiles.length, index + JUMP_BUFFER_AFTER);
 
           applyVisibility();
 
-          // SOFORT Bilder im Zielbereich aktivieren, bevor wir scrollen
-          // Dadurch starten sie mit dem Laden, während wir scrollen
+          // Vorab-Bilder im Zielbereich aktivieren
           const viewportHeight = window.innerHeight;
-          const estimatedTilesPerViewport = Math.ceil(viewportHeight / 140); // ~140px = min tile size
-          const tilesToPreload = estimatedTilesPerViewport * 3; // 3 Viewports vorladen
+          const estimatedTilesPerViewport = Math.ceil(viewportHeight / 140);
+          const tilesToPreload = estimatedTilesPerViewport * 3;
 
           const preloadStart = Math.max(visibleRange.start, index);
-          const preloadEnd = Math.min(visibleRange.end, index + tilesToPreload);
+          const preloadEnd   = Math.min(visibleRange.end, index + tilesToPreload);
 
           for (let i = preloadStart; i < preloadEnd; i++) {
-            const img = allTiles[i]?.querySelector('img[data-src]');
+            const tile = allTiles[i];
+            const img = tile?.querySelector('img[data-src]');
             if (img) activateImg(img);
           }
 
           await new Promise(r => requestAnimationFrame(r));
-
-          // Prefetch für smooth scrolling
           prefetchNext();
 
           const anchor = allTiles[index];
@@ -559,6 +553,9 @@
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             anchor.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
           }
+
+          // SOFORT sichtbaren Bereich hydratisieren (wichtig bei „Sprung in die Mitte“)
+          hydrateVisibleImages();
 
           const url = new URL(location.href);
           url.searchParams.set('year', targetYear);
@@ -578,6 +575,11 @@
         /* ====== Lazy ====== */
         function activateImg(img){
           if (!img || img.dataset.activated) return;
+
+          // *** WICHTIG: Lazy-Blocker entfernen, sofort laden ***
+          img.removeAttribute('loading');
+          img.loading = 'eager';
+
           if (img.dataset.sizes && !img.sizes) img.sizes = img.dataset.sizes;
           if (img.dataset.srcset && !img.srcset) { img.srcset = img.dataset.srcset; delete img.dataset.srcset; }
           if (img.dataset.src) { img.src = img.dataset.src; delete img.dataset.src; }
@@ -588,148 +590,78 @@
           }, { once:true });
         }
 
-        // Berechne Distanz eines Elements zum Viewport-Center
-        function getViewportDistance(element) {
-          const rect = element.getBoundingClientRect();
-          const viewportCenter = window.innerHeight / 2;
-          const elementCenter = rect.top + rect.height / 2;
-          return Math.abs(elementCenter - viewportCenter);
+        // Distanz zum Viewport-Zentrum
+        function getViewportDistance(el) {
+          const r = el.getBoundingClientRect();
+          const c = window.innerHeight / 2;
+          return Math.abs((r.top + r.height/2) - c);
         }
 
-        // Finde Tiles die aktuell im erweiterten Viewport sind (optimiert)
+        // Tiles im erweiterten Viewport
         function getTilesInViewport(buffer = 2) {
-          const viewportHeight = window.innerHeight;
-          const viewportTop = 0;
-          const viewportBottom = viewportHeight;
-          const bufferZone = viewportHeight * buffer;
+          const vh = window.innerHeight;
+          const top = 0, bottom = vh;
+          const buf = vh * buffer;
+          const res = [];
 
-          const tilesInView = [];
+          const start = Math.max(0, visibleRange.start - 50);
+          const end   = Math.min(allTiles.length, visibleRange.end + 50);
 
-          // Optimierung: Prüfe nur Tiles im aktuellen visibleRange + nahe Umgebung
-          const searchStart = Math.max(0, visibleRange.start - 50);
-          const searchEnd = Math.min(allTiles.length, visibleRange.end + 50);
-
-          for (let i = searchStart; i < searchEnd; i++) {
-            const tile = allTiles[i];
-            const rect = tile.getBoundingClientRect();
-
-            // Prüfe ob Tile im erweiterten Viewport ist
-            if (rect.bottom > viewportTop - bufferZone && rect.top < viewportBottom + bufferZone) {
-              tilesInView.push({
-                tile,
-                index: i,
-                rect,
-                distance: getViewportDistance(tile)
-              });
+          for (let i = start; i < end; i++) {
+            const t = allTiles[i];
+            const r = t.getBoundingClientRect();
+            if (r.bottom > top - buf && r.top < bottom + buf) {
+              res.push({ tile: t, index: i, rect: r, distance: getViewportDistance(t) });
             }
           }
-
-          // Robuster Fallback: Binäre Suche wenn keine Tiles gefunden
-          if (tilesInView.length === 0) {
-            // Binäre Suche nach erstem sichtbaren Tile
-            let left = 0;
-            let right = allTiles.length - 1;
-            let firstVisible = -1;
-
-            while (left <= right) {
-              const mid = Math.floor((left + right) / 2);
-              const rect = allTiles[mid].getBoundingClientRect();
-
-              if (rect.bottom > viewportTop - bufferZone) {
-                firstVisible = mid;
-                right = mid - 1; // Suche weiter links
-              } else {
-                left = mid + 1; // Suche rechts
-              }
-            }
-
-            // Wenn gefunden, sammle alle sichtbaren Tiles in der Nähe
-            if (firstVisible !== -1) {
-              const scanStart = Math.max(0, firstVisible - 100);
-              const scanEnd = Math.min(allTiles.length, firstVisible + 300);
-
-              for (let j = scanStart; j < scanEnd; j++) {
-                const t = allTiles[j];
-                const r = t.getBoundingClientRect();
-                if (r.bottom > viewportTop - bufferZone && r.top < viewportBottom + bufferZone) {
-                  tilesInView.push({
-                    tile: t,
-                    index: j,
-                    rect: r,
-                    distance: getViewportDistance(t)
-                  });
-                }
-              }
-            }
-          }
-
-          return tilesInView;
+          return res;
         }
 
-        // Aktualisiere visibleRange basierend auf aktueller Scroll-Position
         function updateVisibleRangeFromViewport() {
-          const tilesInView = getTilesInViewport(2);
+          const vis = getTilesInViewport(2);
+          if (vis.length === 0) return;
 
-          if (tilesInView.length === 0) {
-            // Garantierter Fallback: Schätze Position basierend auf Scroll-Verhältnis
-            const scrollRatio = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-            const estimatedIndex = Math.floor(scrollRatio * allTiles.length);
-            const safeIndex = Math.max(0, Math.min(allTiles.length - 1, estimatedIndex));
+          const idxs = vis.map(v => v.index);
+          const minI = Math.min(...idxs);
+          const maxI = Math.max(...idxs);
 
-            // Setze einen großzügigen Bereich um die geschätzte Position
-            visibleRange.start = Math.max(0, safeIndex - BATCH_SIZE * 3);
-            visibleRange.end = Math.min(allTiles.length, safeIndex + BATCH_SIZE * 5);
-            return;
-          }
+          const newStart = Math.max(0, minI - BATCH_SIZE);
+          const newEnd   = Math.min(allTiles.length, maxI + BATCH_SIZE*2);
 
-          // Finde minimalen und maximalen Index
-          const indices = tilesInView.map(t => t.index);
-          const minIndex = Math.min(...indices);
-          const maxIndex = Math.max(...indices);
-
-          // Erweitere Range um den Viewport herum (nicht sequentiell!)
-          const bufferBefore = BATCH_SIZE;
-          const bufferAfter = BATCH_SIZE * 2;
-
-          const newStart = Math.max(0, minIndex - bufferBefore);
-          const newEnd = Math.min(allTiles.length, maxIndex + bufferAfter);
-
-          // Begrenze die Gesamtanzahl sichtbarer Tiles
-          const rangeSize = newEnd - newStart;
-          if (rangeSize > MAX_VIRTUAL_WINDOW) {
-            // Zentriere das Fenster um den Viewport
-            const center = Math.floor((minIndex + maxIndex) / 2);
-            visibleRange.start = Math.max(0, center - Math.floor(MAX_VIRTUAL_WINDOW / 2));
-            visibleRange.end = Math.min(allTiles.length, visibleRange.start + MAX_VIRTUAL_WINDOW);
+          const size = newEnd - newStart;
+          if (size > MAX_VIRTUAL_WINDOW) {
+            const center = Math.floor((minI + maxI) / 2);
+            visibleRange.start = Math.max(0, center - Math.floor(MAX_VIRTUAL_WINDOW/2));
+            visibleRange.end   = Math.min(allTiles.length, visibleRange.start + MAX_VIRTUAL_WINDOW);
           } else {
             visibleRange.start = newStart;
-            visibleRange.end = newEnd;
+            visibleRange.end   = newEnd;
           }
         }
 
         function hydrateVisibleImages(){
-          // Hole ALLE Tiles die im Viewport oder nahe dran sind (egal ob hidden oder nicht)
-          const tilesInView = getTilesInViewport(1.5);
-
-          // Sammle alle Bilder aus diesen Tiles
-          const imagesToLoad = tilesInView
-            .map(item => {
-              const img = item.tile.querySelector('img[data-src]');
-              return img ? { img, distance: item.distance, tile: item.tile } : null;
+          const vis = getTilesInViewport(1.5)
+            .map(v => {
+              const img = v.tile.querySelector('img[data-src]');
+              return img ? { img, distance: v.distance } : null;
             })
             .filter(Boolean)
-            .sort((a, b) => a.distance - b.distance);
+            .sort((a,b)=> a.distance - b.distance);
 
-          // Lade Bilder in priorisierter Reihenfolge (nähere zuerst)
-          imagesToLoad.forEach(item => activateImg(item.img));
+          vis.forEach(v => activateImg(v.img));
         }
+
+        // Observer beobachtet die TILES, nicht die IMGs
         if ('IntersectionObserver' in window) {
-          const io = new IntersectionObserver((entries)=>{
-            entries.forEach(entry=>{
-              if (entry.isIntersecting) activateImg(entry.target);
-            });
+          const tileObserver = new IntersectionObserver((entries)=>{
+            for (const e of entries) {
+              if (!e.isIntersecting) continue;
+              const img = e.target.querySelector('img[data-src]');
+              if (img) activateImg(img);
+            }
           }, { rootMargin: INTERSECTION_ROOT_MARGIN });
-          grid.querySelectorAll('img[data-src]').forEach(img => io.observe(img));
+
+          allTiles.forEach(t => tileObserver.observe(t));
         }
 
         /* ====== Infinite Scroll ====== */
@@ -747,22 +679,19 @@
           const doc = document.documentElement;
           return (window.innerHeight + window.scrollY) >= (doc.scrollHeight - px);
         }
-
         function nearTop(px = NEAR_BOTTOM_THRESHOLD){
           return window.scrollY <= px;
         }
 
-        /* ====== Navigation-Handler ====== */
+        /* ====== Navigation ====== */
         function go(tile){
           const url = tile?.dataset?.url;
           if (url) window.location.href = url;
         }
         const isTouch = 'ontouchstart' in window;
 
-        // Desktop: Klick + Tastatur mit Pfeiltasten-Navigation
         if (!isTouch) {
           const GRID_COLS = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
-
           allTiles.forEach(tile => {
             tile.addEventListener('click', (e)=> {
               if (tile._suppressNextClick) {
@@ -772,66 +701,38 @@
               }
               go(tile);
             });
-
             tile.addEventListener('keydown', (e)=>{
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                go(tile);
-                return;
-              }
-
-              // Pfeiltasten-Navigation
-              const currentIndex = allTiles.indexOf(tile);
-              let targetIndex = -1;
-
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(tile); return; }
+              const i = allTiles.indexOf(tile);
+              let t = -1;
               switch(e.key) {
-                case 'ArrowRight':
-                  targetIndex = currentIndex + 1;
-                  break;
-                case 'ArrowLeft':
-                  targetIndex = currentIndex - 1;
-                  break;
-                case 'ArrowDown':
-                  targetIndex = currentIndex + GRID_COLS;
-                  break;
-                case 'ArrowUp':
-                  targetIndex = currentIndex - GRID_COLS;
-                  break;
-                case 'Home':
-                  targetIndex = 0;
-                  break;
-                case 'End':
-                  targetIndex = allTiles.length - 1;
-                  break;
-                default:
-                  return;
+                case 'ArrowRight': t = i+1; break;
+                case 'ArrowLeft':  t = i-1; break;
+                case 'ArrowDown':  t = i+GRID_COLS; break;
+                case 'ArrowUp':    t = i-GRID_COLS; break;
+                case 'Home':       t = 0; break;
+                case 'End':        t = allTiles.length-1; break;
+                default: return;
               }
-
-              if (targetIndex >= 0 && targetIndex < allTiles.length) {
+              if (t>=0 && t<allTiles.length) {
                 e.preventDefault();
-                const targetTile = allTiles[targetIndex];
-                if (targetTile && !targetTile.classList.contains('hidden')) {
-                  targetTile.focus();
-                  targetTile.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                const target = allTiles[t];
+                if (target && !target.classList.contains('hidden')) {
+                  target.focus();
+                  target.scrollIntoView({ behavior:'smooth', block:'nearest' });
                 }
               }
             });
           });
-        }
-
-        /* ====== Mobile: Arm-to-open (optimiert) ====== */
-        if (isTouch) {
+        } else {
           const showPreview = (tile) => {
             const badge = tile.querySelector('.date-badge');
             if (badge) {
               badge.style.opacity = '1';
               badge.style.transform = 'translateY(0)';
             }
-            if (tile.dataset.hasCaption === '1') {
-              tile.classList.add('show-caption');
-            }
+            if (tile.dataset.hasCaption === '1') tile.classList.add('show-caption');
           };
-
           const hidePreview = (tile) => {
             const badge = tile.querySelector('.date-badge');
             if (badge) {
@@ -841,17 +742,12 @@
             tile.classList.remove('show-caption');
             tile._armedOpen = false;
           };
-
           allTiles.forEach(tile => {
             tile._armedOpen = false;
             tile._hideTimer = null;
 
             tile.addEventListener('touchstart', () => {
-              if (tile._armedOpen) {
-                go(tile);
-                return;
-              }
-
+              if (tile._armedOpen) { go(tile); return; }
               showPreview(tile);
               clearTimeout(tile._hideTimer);
               tile._hideTimer = setTimeout(() => hidePreview(tile), BADGE_HIDE_TIMEOUT_MS);
@@ -872,7 +768,7 @@
           });
         }
 
-        /* ====== Konsolidierter Scroll-Handler (Performance-Optimiert) ====== */
+        /* ====== Scroll-Handler ====== */
         const isMobileUA = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
         let scrollState = {
           ticking: false,
@@ -887,101 +783,54 @@
           velocity: 0
         };
 
-        // Aggressive Bild-Aktivierung bei schnellem Scrollen
         function eagerLoadOnFastScroll() {
-          const velocity = Math.abs(scrollState.velocity);
-          const VELOCITY_THRESHOLD = 800; // px/s
-
-          if (velocity < VELOCITY_THRESHOLD) return;
-
-          // Bei schnellem Scrollen: Lade mehr Bilder in Scroll-Richtung voraus
-          const scrollingDown = scrollState.velocity > 0;
-          const viewportHeight = window.innerHeight;
-          const estimatedTilesPerViewport = Math.ceil(viewportHeight / 140);
-
-          // Je schneller, desto mehr vorladen (2-5 Viewports)
-          const velocityFactor = Math.min(5, Math.ceil(velocity / VELOCITY_THRESHOLD));
-          const tilesToPreload = estimatedTilesPerViewport * velocityFactor;
-
-          // Finde Tiles in Scroll-Richtung, die noch nicht geladen sind
-          const tilesInView = getTilesInViewport(velocityFactor);
-
-          // Sammle Bilder basierend auf Scroll-Richtung
-          const imagesToLoad = tilesInView
+          const v = Math.abs(scrollState.velocity);
+          const TH = 800; if (v < TH) return;
+          const down = scrollState.velocity > 0;
+          const vh = window.innerHeight;
+          const tilesToPreload = Math.ceil(vh / 140) * Math.min(5, Math.ceil(v / TH));
+          const vis = getTilesInViewport(Math.min(5, Math.ceil(v / TH)))
             .filter(item => {
-              const img = item.tile.querySelector('img[data-src]');
-              if (!img) return false;
-
-              // Bei schnellem Scrollen: Priorisiere Richtung
-              if (scrollingDown) {
-                return item.rect.top > -viewportHeight;
-              } else {
-                return item.rect.bottom < viewportHeight * 2;
-              }
+              const r = item.rect;
+              if (down) return r.top > -vh;
+              return r.bottom < vh * 2;
             })
-            .map(item => {
-              const img = item.tile.querySelector('img[data-src]');
-              return { img, distance: item.distance, tile: item.tile };
-            })
-            .filter(item => item.img)
-            .sort((a, b) => a.distance - b.distance)
+            .map(item => item.tile.querySelector('img[data-src]'))
+            .filter(Boolean)
             .slice(0, tilesToPreload);
-
-          // Aktiviere Bilder
-          imagesToLoad.forEach(item => activateImg(item.img));
+          vis.forEach(activateImg);
         }
 
-        // Zentrale Scroll-Update Funktion
         function performScrollUpdates() {
           const now = performance.now();
-
-          // Badge-Clamping (gedrosselt für Desktop)
-          if (!isMobileUA && (now - scrollState.lastClamp > CLAMP_THROTTLE_MS)) {
+          if (!isMobileUA && (now - scrollState.lastClamp > 80)) {
             clampBadgeToGridTop();
             scrollState.lastClamp = now;
           }
-
-          // Viewport-basierte Range-Updates (nur bei normalem Scrollen)
           if (!isProgrammaticScroll) {
             updateVisibleRangeFromViewport();
             applyVisibility();
           }
-
-          // Weitere Updates
           if (!isMobileUA) {
             updateBadge();
             if (yearRail.classList.contains('visible')) setRailFrameToBadge();
-            if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle();
-            else syncURLToCurrentYear();
+            if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle(); else syncURLToCurrentYear();
             hydrateVisibleImages();
           }
         }
 
-        // Haupt Scroll-Handler
         function onScroll() {
-          // Scrollgeschwindigkeit messen
           const now = performance.now();
-          const currentScrollY = window.scrollY;
-          const deltaY = currentScrollY - scrollState.lastScrollY;
-          const deltaTime = now - scrollState.lastScrollCheck;
-
-          if (deltaTime > 0) {
-            // Velocity in px/s
-            scrollState.velocity = (deltaY / deltaTime) * 1000;
-          }
-
-          scrollState.lastScrollY = currentScrollY;
+          const y = window.scrollY;
+          const dY = y - scrollState.lastScrollY;
+          const dT = now - scrollState.lastScrollCheck;
+          if (dT > 0) scrollState.velocity = (dY / dT) * 1000;
+          scrollState.lastScrollY = y;
           scrollState.lastScrollCheck = now;
 
-          // Sofortiges Clamping gegen Bounce
           clampBadgeToGridTop();
+          if (!isProgrammaticScroll) eagerLoadOnFastScroll();
 
-          // Bei schnellem Scrollen: Aggressive Vorlade-Strategie
-          if (!isProgrammaticScroll) {
-            eagerLoadOnFastScroll();
-          }
-
-          // Bidirektionales Laden nur bei sequentiellem Scrollen an den Rändern
           if (nearBottom()) {
             if (!scrollState.loadMoreScheduled) {
               scrollState.loadMoreScheduled = true;
@@ -989,7 +838,6 @@
               setTimeout(() => scrollState.loadMoreScheduled = false, SCROLL_THROTTLE_MS);
             }
           }
-
           if (nearTop() && visibleRange.start > 0) {
             if (!scrollState.loadBeforeScheduled) {
               scrollState.loadBeforeScheduled = true;
@@ -998,49 +846,34 @@
             }
           }
 
-          // Mobile: Debounced Updates
           if (isMobileUA) {
             if (scrollState.timeout) clearTimeout(scrollState.timeout);
             scrollState.timeout = setTimeout(() => {
-              // Viewport-basierte Range-Updates
-              if (!isProgrammaticScroll) {
-                updateVisibleRangeFromViewport();
-                applyVisibility();
-              }
+              if (!isProgrammaticScroll) { updateVisibleRangeFromViewport(); applyVisibility(); }
               updateBadge();
               if (yearRail.classList.contains('visible')) setRailFrameToBadge();
-              if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle();
-              else syncURLToCurrentYear();
+              if (isProgrammaticScroll) scheduleUnlockAfterScrollIdle(); else syncURLToCurrentYear();
               hydrateVisibleImages();
             }, MOBILE_SCROLL_DEBOUNCE_MS);
-          }
-          // Desktop: rAF-basiert
-          else {
+          } else {
             if (scrollState.ticking) return;
             scrollState.ticking = true;
-            requestAnimationFrame(() => {
-              performScrollUpdates();
-              scrollState.ticking = false;
-            });
+            requestAnimationFrame(() => { performScrollUpdates(); scrollState.ticking = false; });
           }
 
-          // Clamp-Ticker aktivieren
           scrollState.lastScrollTS = performance.now();
           if (!scrollState.clampTicking) {
             scrollState.clampTicking = true;
             requestAnimationFrame(function tick() {
               if (!scrollState.clampTicking) return;
               clampBadgeToGridTop();
-              if (performance.now() - scrollState.lastScrollTS > CLAMP_TICK_TIMEOUT_MS) {
-                scrollState.clampTicking = false;
-                return;
-              }
+              if (performance.now() - scrollState.lastScrollTS > 120) { scrollState.clampTicking = false; return; }
               requestAnimationFrame(tick);
             });
           }
         }
 
-        // Event Listeners (konsolidiert)
+        // Event Listeners
         window.addEventListener('scroll', onScroll, { passive: true });
         window.addEventListener('resize', onScroll, { passive: true });
         window.addEventListener('wheel', clampBadgeToGridTop, { passive: true });
@@ -1063,7 +896,6 @@
         const init = getCurrent();
         lastURLYear = init.year || lastURLYear;
 
-        // Nicht-kritische Initialisierung im Idle
         scheduleIdleTask(() => {
           hydrateDateBadges();
           prefetchNext();
@@ -1076,7 +908,12 @@
         });
       } catch(err){
         console.error('photos page init error', err);
-        try { document.querySelectorAll('.photo-tile').forEach(t => t.classList.add('ready')); } catch {}
+        try {
+          document.querySelectorAll('.photo-tile').forEach(t => {
+            t.classList.add('ready');
+            t.style.contentVisibility='visible';
+          });
+        } catch {}
       }
     })();
   </script>
