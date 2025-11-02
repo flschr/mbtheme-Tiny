@@ -13,9 +13,8 @@
     onclick="topFunction()"
     id="myBtn"
     title="Zurück nach oben"
-    aria-label="Zurück nach oben (0%)">
+    aria-label="Zurück nach oben">
     <span class="scroll-btn__icon" aria-hidden="true">↑</span>
-    <span class="scroll-btn__progress" data-scroll-progress aria-hidden="true">0%</span>
   </button>
 
   <!-- JavaScript with cache busting -->
@@ -27,21 +26,10 @@
     // Get the button
     const mybutton = document.getElementById("myBtn");
 
-    const progressText = mybutton.querySelector("[data-scroll-progress]");
-
     function scrollFunction() {
       const docElement = document.documentElement;
       const body = document.body;
       const scrollTop = docElement.scrollTop || body.scrollTop;
-      const scrollHeight = docElement.scrollHeight - docElement.clientHeight;
-      const scrolled = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0;
-
-      if (progressText) {
-        progressText.textContent = `${scrolled}%`;
-      }
-
-      mybutton.setAttribute("aria-label", `Zurück nach oben (${scrolled}%)`);
-      mybutton.style.setProperty("--scroll-progress", scrolled);
 
       if (scrollTop > 20) {
         mybutton.style.display = "flex";
