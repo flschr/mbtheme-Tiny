@@ -236,15 +236,6 @@ footer .attribution {
 	display: none;
 }
 
-footer i {
-	font-size: 1.5em;
-	padding: 0 5px;
-}
-
-footer a i:hover {
-	color: var(--text);
-}
-
 
 /* ==========================================================================
    CONTENT: ARTICLES & POSTS
