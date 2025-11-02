@@ -229,8 +229,8 @@
         {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
           {{ if ne ($.Scratch.Get "currentMonth") "" }}
             </div> {{/* Close previous grid */}}
+            <h2 class="month-header">{{ $monthYear }}</h2>
           {{ end }}
-          <h2 class="month-header">{{ $monthYear }}</h2>
           <div class="photos-grid">
           {{ $.Scratch.Set "currentMonth" $monthYear }}
         {{ end }}
@@ -265,8 +265,8 @@
         {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
           {{ if ne ($.Scratch.Get "currentMonth") "" }}
             </div> {{/* Close previous grid */}}
+            <h2 class="month-header">{{ $monthYear }}</h2>
           {{ end }}
-          <h2 class="month-header">{{ $monthYear }}</h2>
           <div class="photos-grid">
           {{ $.Scratch.Set "currentMonth" $monthYear }}
         {{ end }}
