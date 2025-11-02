@@ -257,10 +257,10 @@
             <h3>Navigation</h3>
             <dl>
               <dt><kbd>j</kbd></dt>
-              <dd>Nächster Beitrag oder Foto</dd>
+              <dd>Nächster Beitrag/Foto</dd>
 
               <dt><kbd>k</kbd></dt>
-              <dd>Vorheriger Beitrag oder Foto</dd>
+              <dd>Vorheriger Beitrag/Foto</dd>
 
               <dt><kbd>n</kbd></dt>
               <dd>Nächste Seite</dd>
