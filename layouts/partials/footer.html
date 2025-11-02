@@ -23,39 +23,42 @@
   <script src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
 
   <script>
-    // Get the button
-    const mybutton = document.getElementById("myBtn");
-
-    function scrollFunction() {
-      const docElement = document.documentElement;
-      const body = document.body;
-      const scrollTop = docElement.scrollTop || body.scrollTop;
-      const docHeight = docElement.scrollHeight - docElement.clientHeight;
-
-      if (docHeight > 0) {
-        const progress = Math.min((scrollTop / docHeight) * 100, 100);
-        mybutton.style.setProperty("--scroll-progress", `${progress}%`);
-      } else {
-        mybutton.style.setProperty("--scroll-progress", "100%");
-      }
-
-      if (scrollTop > 20) {
-        mybutton.style.display = "flex";
-      } else {
-        mybutton.style.display = "none";
-      }
-    }
-
-    // When the user scrolls down 20px from the top of the document, show the button
-    window.addEventListener("scroll", scrollFunction, { passive: true });
-
     // When the user clicks on the button, scroll to the top of the document
     function topFunction() {
       document.body.scrollTop = 0; // For Safari
       document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
     }
 
-    scrollFunction();
+    const mybutton = document.getElementById("myBtn");
+
+    if (mybutton) {
+      const scrollFunction = () => {
+        const docElement = document.documentElement;
+        const body = document.body;
+        const scrollTop = docElement.scrollTop || body.scrollTop;
+        const docHeight = docElement.scrollHeight - docElement.clientHeight;
+
+        if (docHeight > 0) {
+          const progress = Math.min((scrollTop / docHeight) * 100, 100);
+          mybutton.style.setProperty("--scroll-progress", `${progress}%`);
+        } else {
+          mybutton.style.setProperty("--scroll-progress", "100%");
+        }
+
+        if (scrollTop > 20) {
+          mybutton.style.display = "flex";
+        } else {
+          mybutton.style.display = "none";
+        }
+      };
+
+      // When the user scrolls down 20px from the top of the document, show the button
+      window.addEventListener("scroll", scrollFunction, { passive: true });
+
+      scrollFunction();
+    }
+
+    window.topFunction = topFunction;
   </script>
 
   <!-- Analytics -->

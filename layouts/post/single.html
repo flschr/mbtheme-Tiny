@@ -15,8 +15,6 @@
       <script type="text/javascript" src="https://micro.blog/narration.js?url={{ . }}"></script>
     {{ end }}
     {{ end }}
-{{- $hideTitle  := .Params.hideTitle  | default false -}}
-{{- $forceTitle := .Params.forceTitle | default false -}}
 {{ if .Title }}
     <h1 class="p-name">{{ .Title }}</h1>
     {{ end }}

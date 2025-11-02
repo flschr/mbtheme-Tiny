@@ -34,10 +34,33 @@
                 </h2>
               {{ end }}
 
-              <!-- Immer den kompletten Artikel ausgeben (keine Summary/Teaser) -->
-              <div class="e-content">
-                {{ .Content }}
-              </div>
+              {{ if in .RawContent "<!--more-->" }}
+                <div class="p-summary">
+                  {{ $splitContents := split .RawContent "<!--more-->" }}
+                  {{ $summary := index $splitContents 0 }}
+                  {{ $summary := replaceRE "\\[\\^.*?\\]" "" $summary }}
+                  {{ $summary := replaceRE "\\\n\\[\\^.*?\\]:.*" "" $summary }}
+                  {{ $summary | markdownify }}
+                  <p><a class="read-more" href="{{ .Permalink }}">
+                    {{ if templates.Exists "partials/microhook-read-more-text.html" }}
+                      {{ partial "microhook-read-more-text.html" . }}
+                    {{ else }}
+                      Read More →
+                    {{ end }}
+                  </a></p>
+                </div>
+              {{ else }}
+                <div class="p-summary">
+                  {{ .Summary | safeHTML }}
+                  <p><a class="read-more" href="{{ .Permalink }}">
+                    {{ if templates.Exists "partials/microhook-read-more-text.html" }}
+                      {{ partial "microhook-read-more-text.html" . }}
+                    {{ else }}
+                      Read More →
+                    {{ end }}
+                  </a></p>
+                </div>
+              {{ end }}
 
               {{ if templates.Exists "partials/microhook-below-post-in-list.html" }}
                 {{ partial "microhook-below-post-in-list.html" . }}

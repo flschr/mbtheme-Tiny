@@ -33,8 +33,8 @@
         {{ range .Site.Menus.main }}
           <li>
             {{ if .Page.Params.redirect_url }}
-              <a 
-                class="page-link {{ .Name }}" 
+              <a
+                class="page-link {{ .Name | urlize }}"
                 href="{{ .Page.Params.redirect_url }}"
                 {{ if hasPrefix .Page.Params.redirect_url "http" }}
                   rel="noopener noreferrer"
@@ -45,8 +45,8 @@
                 {{ .Name }}
               </a>
             {{ else }}
-              <a 
-                class="page-link {{ .Name }}" 
+              <a
+                class="page-link {{ .Name | urlize }}"
                 href="{{ .URL | relLangURL | safeURL }}"
                 {{ if eq .URL $.RelPermalink }}aria-current="page"{{ end }}>
                 {{ .Name }}

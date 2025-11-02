@@ -669,12 +669,12 @@ iframe {
 }
 
 .microblog_shared_note {
-	background: red;
-	margin: 0 auto;
-	padding: 5px;
-	border-radius: var(--radius-default);
-	color: white;
-	width: fit-content;
+        background: #fff5f5;
+        margin: 0 auto;
+        padding: 5px;
+        border-radius: var(--radius-default);
+        color: #7a0000;
+        width: fit-content;
 }
 
 .microblog_reply_textarea textarea {
