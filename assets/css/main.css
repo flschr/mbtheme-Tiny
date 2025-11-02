@@ -87,6 +87,10 @@
 	box-sizing: border-box;
 }
 
+html {
+	scroll-behavior: smooth;
+}
+
 body {
 	max-width: 40em;
 	margin: 2em auto;
@@ -264,6 +268,11 @@ a.post-date,
 
 a.post-date:hover {
 	text-decoration: none;
+}
+
+.reading-time {
+	font-size: 0.8em;
+	color: var(--accent2);
 }
 
 .e-content {
@@ -715,4 +724,39 @@ nav a:focus-visible {
 
 .tiny-text {
 	font-size: 0.6em;
+}
+
+
+/* ==========================================================================
+   BACK TO TOP BUTTON
+   ========================================================================== */
+
+.back-to-top {
+	position: fixed;
+	bottom: 2em;
+	right: 2em;
+	width: 2.5em;
+	height: 2.5em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--link);
+	color: var(--button-text);
+	font-size: 1.5em;
+	font-weight: bold;
+	text-decoration: none;
+	border-radius: var(--radius-default);
+	opacity: 0.6;
+	transition: opacity 0.3s ease;
+	z-index: 1000;
+}
+
+.back-to-top:hover {
+	opacity: 1;
+	color: var(--button-text);
+}
+
+.back-to-top:focus {
+	outline: 3px solid var(--link);
+	outline-offset: 2px;
 }
