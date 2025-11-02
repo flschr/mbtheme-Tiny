@@ -23,13 +23,17 @@
   <script src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
 
   <script>
+    const mybutton = document.getElementById("myBtn");
+
     // When the user clicks on the button, scroll to the top of the document
     function topFunction() {
       document.body.scrollTop = 0; // For Safari
       document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-    }
 
-    const mybutton = document.getElementById("myBtn");
+      if (mybutton && typeof mybutton.blur === "function") {
+        mybutton.blur();
+      }
+    }
 
     if (mybutton) {
       const scrollFunction = () => {
@@ -49,6 +53,10 @@
           mybutton.style.display = "flex";
         } else {
           mybutton.style.display = "none";
+
+          if (typeof mybutton.blur === "function") {
+            mybutton.blur();
+          }
         }
       };
 
