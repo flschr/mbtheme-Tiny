@@ -884,21 +884,28 @@ kbd {
    ========================================================================== */
 
 #myBtn {
+        --btn-bg: #f7f7f7;
+        --btn-color: #4a4a4a;
+        --ring-track-color: rgba(0, 0, 0, 0.08);
+        --ring-active-color: #4a4a4a;
+        --scroll-progress: 0%;
+
         display: none;
         position: fixed;
         bottom: 1.5rem;
         right: 1.5rem;
         z-index: 99;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        background-color: #f7f7f7;
-        color: #4a4a4a;
+        border: none;
+        background: none;
+        color: var(--btn-color);
         cursor: pointer;
         width: 3rem;
         height: 3rem;
         border-radius: 999px;
         font-size: 1rem;
-        opacity: 0.75;
-        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        opacity: 0.85;
+        transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease,
+                color 0.2s ease;
         align-items: center;
         justify-content: center;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -907,11 +914,41 @@ kbd {
         isolation: isolate;
 }
 
+#myBtn::before,
+#myBtn::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        transition: background 0.3s ease, background-color 0.3s ease;
+        z-index: -1;
+        pointer-events: none;
+}
+
+#myBtn::before {
+        background: conic-gradient(var(--ring-active-color) var(--scroll-progress),
+                        var(--ring-track-color) 0);
+}
+
+#myBtn::after {
+        inset: 0.35rem;
+        background-color: var(--btn-bg);
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
 #myBtn:hover,
 #myBtn:focus-visible {
+        --btn-bg: #4a4a4a;
+        --btn-color: #f7f7f7;
         opacity: 1;
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+#myBtn:hover::before,
+#myBtn:focus-visible::before {
+        --ring-active-color: #f7f7f7;
+        --ring-track-color: rgba(255, 255, 255, 0.35);
 }
 
 #myBtn:focus-visible {
@@ -926,4 +963,6 @@ kbd {
 .scroll-btn__icon {
         font-size: 1.4rem;
         line-height: 1;
+        position: relative;
+        z-index: 1;
 }
