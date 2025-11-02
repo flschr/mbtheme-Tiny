@@ -187,12 +187,11 @@
         {{ $src300 := "" }}{{ $src600 := "" }}
 
         {{ if $isMBPhotos }}
-          {{ $src300 = replaceRE `/photos/[^/]+/` "/photos/300w/" $url }}
-          {{ $src600 = replaceRE `/photos/[^/]+/` "/photos/600w/" $url }}
+          {{ $src300 = replaceRE "/photos/[0-9]+/" "/photos/300/" $url }}
+          {{ $src600 = replaceRE "/photos/[0-9]+/" "/photos/600/" $url }}
         {{ else }}
-          {{ $encoded := $url | urlquery }}
-          {{ $src300 = printf "https://micro.blog/photos/300w/%s" $encoded }}
-          {{ $src600 = printf "https://micro.blog/photos/600w/%s" $encoded }}
+          {{ $src300 = $url }}
+          {{ $src600 = $url }}
         {{ end }}
 
         {{/* Check if we need to start a new month section */}}
