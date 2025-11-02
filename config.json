@@ -24,5 +24,27 @@
     "home": ["HTML", "RSS", "JSONFeed"]
   },
 
+  "params": {
+    "social": [
+      {
+        "name": "Micro.blog",
+        "url": "https://micro.blog/fischr",
+        "relme": "https://micro.blog/fischr?remote_follow=1"
+      },
+      {
+        "name": "GitHub",
+        "url": "https://github.com/flschr"
+      },
+      {
+        "name": "OpenStreetMap",
+        "url": "https://www.openstreetmap.org/user/fischr"
+      },
+      {
+        "name": "Twitter",
+        "url": "https://twitter.com/flschr"
+      }
+    ]
+  },
+
   "taxonomies": { "tag": "tags" }
 }
