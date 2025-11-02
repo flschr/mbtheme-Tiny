@@ -1,0 +1,61 @@
+.tag-btn {
+  display: inline-block;
+  text-decoration: none;
+  padding: 5px 10px;
+  border: 1px solid var(--link);
+  color: var(--link);
+  border-radius: 5px;
+  font-size: 0.9em;
+  margin: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-btn:hover {
+  background: var(--link);
+  color: var(--button-text);
+}
+
+.tag-btn-active {
+  background: var(--link);
+  color: var(--button-text);
+}
+
+.tag-btn-disabled {
+  display: none;
+}
+
+.toggle-tags-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--link);
+  background: transparent;
+  color: var(--link);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: all 0.2s;
+}
+
+.toggle-tags-btn:hover {
+  background: var(--link);
+  color: var(--button-text);
+}
+
+.result-tag-btn:hover {
+  background: var(--link) !important;
+  color: var(--button-text) !important;
+}
+
+.google-search-hint {
+  display: none;
+  font-size: 0.9em;
+  padding: 0.5rem 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 5px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.google-search-hint:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
