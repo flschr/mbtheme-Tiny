@@ -8,7 +8,14 @@
   </div>
 
   <!-- Scroll to top button -->
-  <button onclick="topFunction()" id="myBtn" title="Go to top">Top</button>
+  <button
+    type="button"
+    onclick="topFunction()"
+    id="myBtn"
+    title="Zurück nach oben"
+    aria-label="Zurück nach oben">
+    <span aria-hidden="true">↑</span>
+  </button>
 
   <!-- JavaScript with cache busting -->
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
