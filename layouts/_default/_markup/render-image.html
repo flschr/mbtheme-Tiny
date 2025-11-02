@@ -31,13 +31,13 @@
 
 {{- if $res -}}
   {{/* Lokales Bild: responsive Derivate */}}
-  {{- $widths := slice 400 768 1024 1440 -}}
+  {{- $widths := slice 200 400 768 1024 1440 -}}
   {{- $srcset := slice -}}
   {{- range $w := $widths -}}
-    {{- $v := $res.Fit (printf "%dx q85" $w) -}}
+    {{- $v := $res.Fit (printf "%dx q75" $w) -}}
     {{- $srcset = $srcset | append (printf "%s %dw" $v.RelPermalink $w) -}}
   {{- end -}}
-  {{- $default := $res.Fit "1024x q85" -}}
+  {{- $default := $res.Fit "1024x q75" -}}
   <img
     src="{{ $default.RelPermalink }}"
     srcset="{{ delimit $srcset ", " }}"
