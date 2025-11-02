@@ -14,16 +14,17 @@
   
   <!-- Cache-Buster: Nutze Hugo Build-Zeit oder Git-Hash -->
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
-  
+
   <!-- Kritisches CSS mit Fingerprinting & Minification -->
   {{ if templates.Exists "partials/microhook-uncss.html" }}
     {{ partial "microhook-uncss.html" . }}
   {{ else }}
     {{ $mainCss := resources.Get "css/main.css" }}
     {{ if $mainCss }}
-      {{ $mainCss = $mainCss | minify | fingerprint }}
-      <link rel="stylesheet" href="{{ $mainCss.Permalink }}" integrity="{{ $mainCss.Data.Integrity }}">
+      {{ $mainCss = $mainCss | minify | fingerprint "sha256" }}
+      <link rel="stylesheet" href="{{ $mainCss.RelPermalink }}" integrity="{{ $mainCss.Data.Integrity }}" crossorigin="anonymous">
     {{ else }}
+      <!-- Fallback ohne Resource Pipeline -->
       <link rel="stylesheet" href="{{ "css/main.css" | relURL }}?v={{ $buildHash }}">
     {{ end }}
   {{ end }}
