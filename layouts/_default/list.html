@@ -4,7 +4,7 @@
   {{ else }}
     <div class="archive h-feed {{ .Title | urlize }}">
 
-      <h2 class="p-name category-title">{{ .Title }}</h2>
+      <h1 class="p-name category-title">{{ .Title }}</h1>
 
       {{ if templates.Exists "partials/microhook-category-header.html" }}
         {{ partial "microhook-category-header.html" . }}
