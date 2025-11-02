@@ -14,7 +14,6 @@
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
   <script src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
   <script src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
-  <script src="{{ "/js/back-to-top.js" | relURL }}?v={{ $buildHash }}"></script>
 
   <!-- Analytics -->
   <script data-goatcounter="https://stats.fischr.org/count"
