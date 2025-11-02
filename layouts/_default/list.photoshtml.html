@@ -276,10 +276,9 @@
         // ====== Performance-Konstanten ======
         const INITIAL_LOAD_COUNT = 36;
         const BATCH_SIZE = 36;
-        const PREFETCH_AHEAD = 24;
-        const INTERSECTION_ROOT_MARGIN = '1000px 0px';
-        const SENTINEL_ROOT_MARGIN = '1200px 0px';
-        const NEAR_BOTTOM_THRESHOLD = 900;
+        const INTERSECTION_ROOT_MARGIN = '300px 0px';
+        const SENTINEL_ROOT_MARGIN = '400px 0px';
+        const NEAR_BOTTOM_THRESHOLD = 400;
         const SCROLL_THROTTLE_MS = 180;
         const MOBILE_SCROLL_DEBOUNCE_MS = 160;
         const SCROLL_IDLE_UNLOCK_MS = 250;
@@ -315,7 +314,6 @@
           end: Math.min(allTiles.length, INITIAL_LOAD_COUNT)
         };
         const batchSize    = BATCH_SIZE;
-        const prefetchAhead= PREFETCH_AHEAD;
 
         // requestIdleCallback Polyfill/Wrapper
         const scheduleIdleTask = window.requestIdleCallback || ((cb) => setTimeout(cb, 1));
@@ -373,29 +371,11 @@
             .forEach(img => { img.closest('.photo-tile')?.classList.add('ready'); });
         }
 
-        let prefetchIdleTask = null;
-        function prefetchNext(){
-          if (prefetchIdleTask) cancelIdleTask(prefetchIdleTask);
-          prefetchIdleTask = scheduleIdleTask(() => {
-            const start = visibleRange.end;
-            const end   = Math.min(allTiles.length, visibleRange.end + prefetchAhead);
-            for (let i = start; i < end; i++) {
-              const img = allTiles[i]?.querySelector('img');
-              if (img && img.dataset && !img.dataset.activated) {
-                if (img.dataset.sizes && !img.sizes) img.sizes = img.dataset.sizes;
-                if (img.dataset.srcset && !img.srcset) img.srcset = img.dataset.srcset;
-              }
-            }
-            prefetchIdleTask = null;
-          });
-        }
-
         function loadMore() {
           const before = visibleRange.end;
           visibleRange.end = Math.min(allTiles.length, visibleRange.end + batchSize);
           if (visibleRange.end === before) return;
           applyVisibility();
-          prefetchNext();
           syncURLToCurrentYear();
         }
 
@@ -546,7 +526,6 @@
           }
 
           await new Promise(r => requestAnimationFrame(r));
-          prefetchNext();
 
           const anchor = allTiles[index];
           if (anchor && !anchor.classList.contains('hidden')) {
@@ -575,10 +554,6 @@
         /* ====== Lazy ====== */
         function activateImg(img){
           if (!img || img.dataset.activated) return;
-
-          // *** WICHTIG: Lazy-Blocker entfernen, sofort laden ***
-          img.removeAttribute('loading');
-          img.loading = 'eager';
 
           if (img.dataset.sizes && !img.sizes) img.sizes = img.dataset.sizes;
           if (img.dataset.srcset && !img.srcset) { img.srcset = img.dataset.srcset; delete img.dataset.srcset; }
@@ -898,7 +873,6 @@
 
         scheduleIdleTask(() => {
           hydrateDateBadges();
-          prefetchNext();
           syncURLToCurrentYear();
         });
 

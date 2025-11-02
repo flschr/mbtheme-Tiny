@@ -28,6 +28,7 @@
   {{ if .eager }}
     <img
       decoding="async"
+      loading="{{ if lt .index 6 }}eager{{ else }}auto{{ end }}"
       fetchpriority="{{ if lt .index 6 }}high{{ else }}auto{{ end }}"
       src="{{ .src300 }}"
       srcset="{{ .src300 }} 200w, {{ .src600 }} 400w"
@@ -37,6 +38,7 @@
     <img
       class="lqip"
       decoding="async"
+      loading="lazy"
       src="{{ .tiny }}"
       data-src="{{ .src300 }}"
       data-srcset="{{ .src300 }} 200w, {{ .src600 }} 400w"
