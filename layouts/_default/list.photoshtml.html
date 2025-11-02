@@ -1,80 +1,80 @@
 {{ define "main" }}
 <main class="photos content" aria-label="Foto-Archiv">
   <style>
+    /* CSS Variablen */
     :root {
-      --gap: 8px;
-      --column-width: 280px;
+      --gap: 16px;
+      --column-width: 300px;
       --max-width: 1400px;
-      --radius: 6px;
+      --radius: 8px;
+      --transition-speed: 0.2s;
     }
 
+    @media (max-width: 768px) {
+      :root {
+        --gap: 12px;
+        --column-width: 200px;
+        --radius: 6px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      :root {
+        --gap: 8px;
+        --column-width: calc(50vw - 12px);
+      }
+    }
+
+    /* Main Container */
     .photos.content {
       overscroll-behavior-y: contain;
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Masonry Grid Container */
+    /* Masonry Grid */
     .photo-grid {
       max-width: var(--max-width);
       margin: 0 auto;
       padding: var(--gap);
     }
 
-    /* Masonry wird die Positionierung übernehmen */
-    .photo-grid::after {
-      content: '';
-      display: block;
-      clear: both;
-    }
-
-    @media (max-width: 768px) {
-      :root {
-        --gap: 6px;
-        --column-width: 200px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      :root {
-        --gap: 4px;
-        --column-width: 160px;
-      }
-    }
-
-    /* Photo Tiles - Masonry Items */
+    /* Photo Tiles */
     .photo-tile {
       width: var(--column-width);
       margin-bottom: var(--gap);
       position: relative;
       overflow: hidden;
-      background: #f3f4f6;
+      background: #f8f9fa;
       cursor: pointer;
       border-radius: var(--radius);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform var(--transition-speed) ease,
+                  box-shadow var(--transition-speed) ease;
       display: block;
+      text-decoration: none;
     }
 
     .photo-tile:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(0,0,0,.2);
+      transform: translateY(-6px);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
       z-index: 10;
     }
 
     .photo-tile:active {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
     }
 
+    /* Photo Images */
     .photo-tile img {
       width: 100%;
       height: auto;
       display: block;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.3s ease, filter 0.3s ease;
     }
 
-    /* LQIP Blur Effect */
+    /* LQIP (Low Quality Image Placeholder) */
     .photo-tile img.lqip {
-      filter: blur(10px);
-      transform: scale(1.05);
+      filter: blur(15px);
+      transform: scale(1.1);
     }
 
     .photo-tile img.loaded {
@@ -83,36 +83,45 @@
     }
 
     /* Hover Overlay */
-    .photo-tile::after {
+    .photo-tile::before {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,.5) 100%);
+      background: linear-gradient(
+        180deg,
+        transparent 50%,
+        rgba(0, 0, 0, 0.6) 100%
+      );
       opacity: 0;
-      transition: opacity 0.2s ease;
+      transition: opacity var(--transition-speed) ease;
       pointer-events: none;
+      z-index: 1;
     }
 
-    .photo-tile:hover::after {
+    .photo-tile:hover::before {
       opacity: 1;
     }
 
     /* Date Badge */
     .date-badge {
       position: absolute;
-      bottom: 0.5rem;
-      left: 0.5rem;
-      padding: 0.35rem 0.6rem;
+      bottom: 12px;
+      left: 12px;
+      padding: 6px 10px;
       font-size: 0.75rem;
-      line-height: 1;
-      color: #fff;
-      background: rgba(0,0,0,.7);
-      border-radius: 4px;
+      font-weight: 500;
+      line-height: 1.2;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 6px;
       opacity: 0;
-      transform: translateY(4px);
-      transition: opacity 0.2s ease, transform 0.2s ease;
+      transform: translateY(8px);
+      transition: opacity var(--transition-speed) ease,
+                  transform var(--transition-speed) ease;
       pointer-events: none;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
+      z-index: 2;
+      white-space: nowrap;
     }
 
     .photo-tile:hover .date-badge {
@@ -120,32 +129,32 @@
       transform: translateY(0);
     }
 
-    /* Loading Indicator */
-    .loading-indicator {
-      text-align: center;
-      padding: 2rem;
-      color: #666;
-      font-size: 0.9rem;
-    }
-
-    /* Focus States */
+    /* Focus States für Accessibility */
     .photo-tile:focus-visible {
       outline: 3px solid #3b82f6;
-      outline-offset: 2px;
+      outline-offset: 3px;
     }
 
+    /* Dark Mode Support */
     @media (prefers-color-scheme: dark) {
       .photo-tile {
         background: #1f2937;
       }
     }
 
+    /* Reduced Motion */
     @media (prefers-reduced-motion: reduce) {
       .photo-tile,
       .photo-tile img,
+      .photo-tile::before,
       .date-badge {
         transition: none;
       }
+    }
+
+    /* Loading State */
+    .photo-grid.loading {
+      min-height: 100vh;
     }
   </style>
 
@@ -158,9 +167,10 @@
       {{ $dateISO := $p.Date.Format "2006-01-02" }}
       {{ $year := $p.Date.Format "2006" }}
 
+      {{/* Micro.blog Photos */}}
       {{ with $p.Params.photos }}
         {{ range $i, $url := . }}
-          {{ $eager := lt $imageIndex 12 }}
+          {{ $eager := lt $imageIndex 8 }}
           {{ $isMBPhotos := or (hasPrefix $url "https://micro.blog/photos/") (hasPrefix $url "http://micro.blog/photos/") }}
           {{ $src300 := "" }}{{ $src600 := "" }}{{ $tiny := "" }}
 
@@ -177,15 +187,15 @@
 
           <a class="photo-tile"
              href="{{ $p.RelPermalink }}"
-             aria-label="{{ $dateFormatted }}"
+             aria-label="Foto vom {{ $dateFormatted }}"
              data-date="{{ $dateFormatted }}"
              data-year="{{ $year }}">
             {{ if $eager }}
               <img
                 src="{{ $src300 }}"
                 srcset="{{ $src300 }} 300w, {{ $src600 }} 600w"
-                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
-                alt="{{ $dateFormatted }}"
+                sizes="(max-width: 480px) calc(50vw - 12px), (max-width: 768px) 200px, 300px"
+                alt="Foto vom {{ $dateFormatted }}"
                 loading="eager"
                 decoding="async"
                 class="loaded">
@@ -194,8 +204,9 @@
                 src="{{ $tiny }}"
                 data-src="{{ $src300 }}"
                 data-srcset="{{ $src300 }} 300w, {{ $src600 }} 600w"
-                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
-                alt="{{ $dateFormatted }}"
+                sizes="(max-width: 480px) calc(50vw - 12px), (max-width: 768px) 200px, 300px"
+                alt="Foto vom {{ $dateFormatted }}"
+                loading="lazy"
                 decoding="async"
                 class="lqip">
             {{ end }}
@@ -206,6 +217,7 @@
         {{ end }}
       {{ end }}
 
+      {{/* Page Bundle Images */}}
       {{ $imgs := $p.Resources.ByType "image" }}
       {{ range $img := $imgs }}
         {{ $name := $img.Name | lower }}
@@ -213,19 +225,19 @@
           {{ $w300 := $img.Resize "300x q85" }}
           {{ $w600 := $img.Resize "600x q85" }}
           {{ $w40 := $img.Resize "40x q50" }}
-          {{ $eager := lt $imageIndex 12 }}
+          {{ $eager := lt $imageIndex 8 }}
 
           <a class="photo-tile"
              href="{{ $p.RelPermalink }}"
-             aria-label="{{ $dateFormatted }}"
+             aria-label="Foto vom {{ $dateFormatted }}"
              data-date="{{ $dateFormatted }}"
              data-year="{{ $year }}">
             {{ if $eager }}
               <img
                 src="{{ $w300.RelPermalink }}"
                 srcset="{{ $w300.RelPermalink }} 300w, {{ $w600.RelPermalink }} 600w"
-                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
-                alt="{{ $dateFormatted }}"
+                sizes="(max-width: 480px) calc(50vw - 12px), (max-width: 768px) 200px, 300px"
+                alt="Foto vom {{ $dateFormatted }}"
                 loading="eager"
                 decoding="async"
                 class="loaded">
@@ -234,8 +246,9 @@
                 src="{{ $w40.RelPermalink }}"
                 data-src="{{ $w300.RelPermalink }}"
                 data-srcset="{{ $w300.RelPermalink }} 300w, {{ $w600.RelPermalink }} 600w"
-                sizes="(max-width: 480px) 160px, (max-width: 768px) 200px, 280px"
-                alt="{{ $dateFormatted }}"
+                sizes="(max-width: 480px) calc(50vw - 12px), (max-width: 768px) 200px, 300px"
+                alt="Foto vom {{ $dateFormatted }}"
+                loading="lazy"
                 decoding="async"
                 class="lqip">
             {{ end }}
@@ -248,7 +261,7 @@
     {{ end }}
   </div>
 
-  <!-- Masonry.js -->
+  <!-- Masonry.js von unpkg CDN (GitHub Repository) -->
   <script src="https://unpkg.com/masonry-layout@4.2.2/dist/masonry.pkgd.min.js"></script>
   <script src="https://unpkg.com/imagesloaded@5.0.0/imagesloaded.pkgd.min.js"></script>
 
@@ -256,103 +269,131 @@
     (function() {
       'use strict';
 
-      const grid = document.querySelector('.photo-grid');
+      const grid = document.getElementById('photoGrid');
       if (!grid) return;
 
-      // Masonry initialisieren
-      const msnry = new Masonry(grid, {
+      // Masonry Konfiguration
+      const masonryOptions = {
         itemSelector: '.photo-tile',
         columnWidth: '.photo-tile',
-        gutter: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 8,
+        gutter: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 16,
         percentPosition: false,
         transitionDuration: '0.3s',
-        initLayout: true
-      });
+        horizontalOrder: false,
+        initLayout: false  // Wir triggern das Layout manuell nach Bildladen
+      };
 
-      // Lazy Loading für Bilder außerhalb des Viewports
-      const lazyImages = document.querySelectorAll('img.lqip[data-src]');
+      // Masonry initialisieren
+      const masonry = new Masonry(grid, masonryOptions);
+
+      // Lazy Loading Setup
       let loadingCount = 0;
-      const maxConcurrent = 6;
+      const maxConcurrent = 8;  // Max gleichzeitig ladende Bilder
 
+      /**
+       * Lädt ein einzelnes Bild mit LQIP-Effekt
+       */
       function loadImage(img) {
-        if (img.dataset.loading || !img.dataset.src) return;
+        if (img.dataset.loading || img.classList.contains('loaded')) return;
 
         img.dataset.loading = 'true';
         loadingCount++;
 
         const src = img.dataset.src;
         const srcset = img.dataset.srcset;
-        const tile = img.closest('.photo-tile');
 
-        const fullImg = new Image();
-        fullImg.onload = () => {
+        // Neues Image Objekt zum Vorladen
+        const tempImg = new Image();
+
+        tempImg.onload = () => {
+          // Bild ist geladen - jetzt austauschen
           img.src = src;
           if (srcset) img.srcset = srcset;
           img.classList.remove('lqip');
           img.classList.add('loaded');
 
+          // Cleanup
           delete img.dataset.src;
           delete img.dataset.srcset;
           delete img.dataset.loading;
-
           loadingCount--;
 
-          // Masonry Layout nach Bildladen aktualisieren
+          // Masonry Layout aktualisieren
+          const tile = img.closest('.photo-tile');
           if (tile) {
-            imagesLoaded(tile, function() {
-              msnry.layout();
-            });
+            imagesLoaded(tile, () => masonry.layout());
           }
         };
 
-        fullImg.onerror = () => {
+        tempImg.onerror = () => {
+          console.warn('Fehler beim Laden des Bildes:', src);
           delete img.dataset.loading;
           loadingCount--;
         };
 
-        if (srcset) fullImg.srcset = srcset;
-        fullImg.src = src;
+        // Start loading
+        if (srcset) tempImg.srcset = srcset;
+        tempImg.src = src;
       }
 
-      // IntersectionObserver für Lazy Loading
-      const imageObserver = new IntersectionObserver((entries) => {
+      /**
+       * IntersectionObserver für performantes Lazy Loading
+       */
+      const lazyImageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting && loadingCount < maxConcurrent) {
             const img = entry.target;
-            if (img.dataset.src && !img.dataset.loading) {
+            if (img.dataset.src) {
               loadImage(img);
+              lazyImageObserver.unobserve(img);  // Nicht mehr beobachten
             }
           }
         });
       }, {
-        rootMargin: '200px 0px',
+        rootMargin: '300px 0px',  // 300px vor dem Sichtbereich laden
         threshold: 0.01
       });
 
-      // Beobachte alle lazy Images
-      lazyImages.forEach(img => imageObserver.observe(img));
+      // Alle lazy Images registrieren
+      const lazyImages = grid.querySelectorAll('img[data-src]');
+      lazyImages.forEach(img => lazyImageObserver.observe(img));
 
-      // Initial Layout nach dem Laden aller eager Bilder
-      imagesLoaded(grid, function() {
-        msnry.layout();
+      /**
+       * Initial Layout nach eager Images
+       */
+      imagesLoaded(grid, { background: true }, () => {
+        masonry.layout();
       });
 
-      // Layout bei Fenstergrößenänderung aktualisieren
+      /**
+       * Responsive Handling - Layout bei Resize neu berechnen
+       */
       let resizeTimeout;
-      window.addEventListener('resize', function() {
+      window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-          // Gutter neu berechnen
-          const newGutter = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap')) || 8;
-          msnry.options.gutter = newGutter;
-          msnry.layout();
+        resizeTimeout = setTimeout(() => {
+          // Gutter neu berechnen für responsive Breakpoints
+          const newGutter = parseInt(
+            getComputedStyle(document.documentElement).getPropertyValue('--gap')
+          ) || 16;
+          masonry.options.gutter = newGutter;
+          masonry.layout();
         }, 250);
       });
 
-      // Cleanup
+      /**
+       * Cleanup bei Page Unload
+       */
       window.addEventListener('beforeunload', () => {
-        imageObserver.disconnect();
+        lazyImageObserver.disconnect();
+        masonry.destroy();
       });
+
+      // Debug Info (optional - kann entfernt werden)
+      console.info('📸 Photo Gallery initialized with Masonry.js');
+      console.info('   Items:', grid.querySelectorAll('.photo-tile').length);
+      console.info('   Eager loaded:', grid.querySelectorAll('img.loaded').length);
+      console.info('   Lazy loading:', lazyImages.length);
     })();
   </script>
 </main>
