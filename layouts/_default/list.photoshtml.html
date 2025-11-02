@@ -25,7 +25,7 @@
     /* Main Container */
     .photos.content {
       max-width: var(--max-width);
-      margin: 0 auto;
+      margin: 0;
       padding: 20px;
       overscroll-behavior-y: contain;
       -webkit-tap-highlight-color: transparent;
@@ -47,7 +47,7 @@
     /* Instagram-Style Grid */
     .photos-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       grid-gap: var(--gap);
       margin-bottom: 2rem;
     }
@@ -184,14 +184,14 @@
       {{ range $i, $url := . }}
         {{ $eager := lt $imageIndex 8 }}
         {{ $isMBPhotos := or (hasPrefix $url "https://micro.blog/photos/") (hasPrefix $url "http://micro.blog/photos/") }}
-        {{ $src300 := "" }}{{ $src600 := "" }}
+        {{ $src200 := "" }}{{ $src400 := "" }}
 
         {{ if $isMBPhotos }}
-          {{ $src300 = replaceRE "/photos/[0-9]+/" "/photos/300/" $url }}
-          {{ $src600 = replaceRE "/photos/[0-9]+/" "/photos/600/" $url }}
+          {{ $src200 = replaceRE "/photos/[0-9]+/" "/photos/200/" $url }}
+          {{ $src400 = replaceRE "/photos/[0-9]+/" "/photos/400/" $url }}
         {{ else }}
-          {{ $src300 = $url }}
-          {{ $src600 = $url }}
+          {{ $src200 = $url }}
+          {{ $src400 = $url }}
         {{ end }}
 
         {{/* Check if we need to start a new month section */}}
@@ -208,9 +208,9 @@
            href="{{ $p.RelPermalink }}"
            aria-label="Foto vom {{ $dateFormatted }}">
           <img
-            src="{{ $src300 }}"
-            srcset="{{ $src300 }} 300w, {{ $src600 }} 600w"
-            sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, 33vw"
+            src="{{ $src200 }}"
+            srcset="{{ $src200 }} 200w, {{ $src400 }} 400w"
+            sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, 25vw"
             alt="Foto vom {{ $dateFormatted }}"
             loading="{{ if $eager }}eager{{ else }}lazy{{ end }}"
             decoding="async">
@@ -226,8 +226,8 @@
     {{ range $img := $imgs }}
       {{ $name := $img.Name | lower }}
       {{ if not (or (hasPrefix $name "hero") (in $name "og-") (in $name "open-graph") (in $name "social") (in $name "thumb")) }}
-        {{ $w300 := $img.Resize "300x q85" }}
-        {{ $w600 := $img.Resize "600x q85" }}
+        {{ $w200 := $img.Resize "200x q85" }}
+        {{ $w400 := $img.Resize "400x q85" }}
         {{ $eager := lt $imageIndex 8 }}
 
         {{/* Check if we need to start a new month section */}}
@@ -244,9 +244,9 @@
            href="{{ $p.RelPermalink }}"
            aria-label="Foto vom {{ $dateFormatted }}">
           <img
-            src="{{ $w300.RelPermalink }}"
-            srcset="{{ $w300.RelPermalink }} 300w, {{ $w600.RelPermalink }} 600w"
-            sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, 33vw"
+            src="{{ $w200.RelPermalink }}"
+            srcset="{{ $w200.RelPermalink }} 200w, {{ $w400.RelPermalink }} 400w"
+            sizes="(max-width: 480px) 50vw, (max-width: 768px) 50vw, 25vw"
             alt="Foto vom {{ $dateFormatted }}"
             loading="{{ if $eager }}eager{{ else }}lazy{{ end }}"
             decoding="async">
