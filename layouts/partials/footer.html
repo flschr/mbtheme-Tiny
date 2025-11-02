@@ -13,8 +13,9 @@
     onclick="topFunction()"
     id="myBtn"
     title="Zurück nach oben"
-    aria-label="Zurück nach oben">
-    <span aria-hidden="true">↑</span>
+    aria-label="Zurück nach oben (0%)">
+    <span class="scroll-btn__icon" aria-hidden="true">↑</span>
+    <span class="scroll-btn__progress" data-scroll-progress aria-hidden="true">0%</span>
   </button>
 
   <!-- JavaScript with cache busting -->
@@ -24,24 +25,41 @@
 
   <script>
     // Get the button
-    let mybutton = document.getElementById("myBtn");
+    const mybutton = document.getElementById("myBtn");
 
-    // When the user scrolls down 20px from the top of the document, show the button
-    window.onscroll = function() { scrollFunction() };
+    const progressText = mybutton.querySelector("[data-scroll-progress]");
 
     function scrollFunction() {
-      if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-        mybutton.style.display = "block";
+      const docElement = document.documentElement;
+      const body = document.body;
+      const scrollTop = docElement.scrollTop || body.scrollTop;
+      const scrollHeight = docElement.scrollHeight - docElement.clientHeight;
+      const scrolled = scrollHeight > 0 ? Math.round((scrollTop / scrollHeight) * 100) : 0;
+
+      if (progressText) {
+        progressText.textContent = `${scrolled}%`;
+      }
+
+      mybutton.setAttribute("aria-label", `Zurück nach oben (${scrolled}%)`);
+      mybutton.style.setProperty("--scroll-progress", scrolled);
+
+      if (scrollTop > 20) {
+        mybutton.style.display = "flex";
       } else {
         mybutton.style.display = "none";
       }
     }
+
+    // When the user scrolls down 20px from the top of the document, show the button
+    window.addEventListener("scroll", scrollFunction, { passive: true });
 
     // When the user clicks on the button, scroll to the top of the document
     function topFunction() {
       document.body.scrollTop = 0; // For Safari
       document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
     }
+
+    scrollFunction();
   </script>
 
   <!-- Analytics -->
