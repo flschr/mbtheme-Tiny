@@ -85,6 +85,13 @@
   text-decoration: none;
 }
 
+.photo-tile.keyboard-focused {
+  outline: 3px solid var(--link);
+  outline-offset: 4px;
+  border-radius: var(--radius-default);
+  transition: outline 0.2s ease;
+}
+
 .photo-tile:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);

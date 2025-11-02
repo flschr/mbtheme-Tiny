@@ -4,15 +4,20 @@
 
   let currentPostIndex = -1;
   let posts = [];
+  let photoTiles = [];
   let helpOverlay = null;
   let previouslyFocusedElement = null;
   let focusableElements = [];
   let managedPageElements = [];
+  let currentPhotoIndex = -1;
 
   // Initialisierung nach DOM-Load
   document.addEventListener('DOMContentLoaded', function() {
     // Sammle alle Post-Previews auf Listen-Seiten
     posts = Array.from(document.querySelectorAll('.post-preview'));
+
+    // Sammle alle Fotos in der Galerie
+    photoTiles = Array.from(document.querySelectorAll('.photo-tile'));
 
     // Erstelle Hilfe-Overlay
     createHelpOverlay();
@@ -35,12 +40,20 @@
     switch(key) {
       case 'j':
         e.preventDefault();
-        navigateToNextPost();
+        if (photoTiles.length > 0) {
+          navigateToNextPhoto();
+        } else {
+          navigateToNextPost();
+        }
         break;
 
       case 'k':
         e.preventDefault();
-        navigateToPreviousPost();
+        if (photoTiles.length > 0) {
+          navigateToPreviousPhoto();
+        } else {
+          navigateToPreviousPost();
+        }
         break;
 
       case 'n':
@@ -111,6 +124,29 @@
     scrollToPost(currentPostIndex);
   }
 
+  function navigateToNextPhoto() {
+    if (photoTiles.length === 0) return;
+
+    currentPhotoIndex++;
+    if (currentPhotoIndex >= photoTiles.length) {
+      currentPhotoIndex = photoTiles.length - 1;
+    }
+
+    scrollToPhoto(currentPhotoIndex);
+  }
+
+  function navigateToPreviousPhoto() {
+    if (photoTiles.length === 0) return;
+
+    currentPhotoIndex--;
+    if (currentPhotoIndex < 0) {
+      currentPhotoIndex = 0;
+      return;
+    }
+
+    scrollToPhoto(currentPhotoIndex);
+  }
+
   function scrollToPost(index) {
     if (posts[index]) {
       posts[index].scrollIntoView({
@@ -120,6 +156,23 @@
 
       // Visuelles Feedback
       highlightPost(posts[index]);
+    }
+  }
+
+  function scrollToPhoto(index) {
+    const tile = photoTiles[index];
+    if (tile) {
+      tile.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'center'
+      });
+
+      if (typeof tile.focus === 'function') {
+        tile.focus({ preventScroll: true });
+      }
+
+      highlightPhoto(tile);
     }
   }
 
@@ -133,6 +186,16 @@
     // Entferne Highlight nach 1 Sekunde
     setTimeout(() => {
       post.classList.remove('keyboard-focused');
+    }, 1000);
+  }
+
+  function highlightPhoto(tile) {
+    photoTiles.forEach(photo => photo.classList.remove('keyboard-focused'));
+
+    tile.classList.add('keyboard-focused');
+
+    setTimeout(() => {
+      tile.classList.remove('keyboard-focused');
     }, 1000);
   }
 
@@ -194,10 +257,10 @@
             <h3>Navigation</h3>
             <dl>
               <dt><kbd>j</kbd></dt>
-              <dd>Nächster Beitrag</dd>
+              <dd>Nächster Beitrag oder Foto</dd>
 
               <dt><kbd>k</kbd></dt>
-              <dd>Vorheriger Beitrag</dd>
+              <dd>Vorheriger Beitrag oder Foto</dd>
 
               <dt><kbd>n</kbd></dt>
               <dd>Nächste Seite</dd>
