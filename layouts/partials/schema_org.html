@@ -15,6 +15,12 @@
 {{- $authorName := .Site.Author.name | default .Site.Title -}}
 {{- $authorURL  := .Site.Author.url  | default .Site.BaseURL -}}
 {{- $authorURLAbs := $authorURL | absURL -}}
+{{- $sameAs := slice -}}
+{{- range .Site.Params.social }}
+  {{- with .url }}
+    {{- $sameAs = $sameAs | append (. | absURL) -}}
+  {{- end }}
+{{- end -}}
 
 {{/* Bild finden (absolute URL sicherstellen) */}}
 {{- $img := "" -}}
@@ -33,10 +39,22 @@
   "url": {{ printf "%q" .Site.BaseURL }},
   "inLanguage": {{ printf "%q" $lang }},
   "description": {{ printf "%q" (.Site.Params.description | default .Site.Title) }},
+  {{- with $sameAs }}
+  "sameAs": [
+    {{- range $index, $url := . -}}
+      {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+    {{- end }}
+  ],
+  {{- end }}
   "publisher": {
     "@type": "Organization",
     "name": {{ printf "%q" .Site.Title }},
-    "url": {{ printf "%q" .Site.BaseURL }}
+    "url": {{ printf "%q" .Site.BaseURL }}{{- with $sameAs }},
+    "sameAs": [
+      {{- range $index, $url := . -}}
+        {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+      {{- end }}
+    ]{{- end }}
   }
 }
 </script>
@@ -60,8 +78,33 @@
   {{- with .Lastmod }} "dateModified": {{ printf "%q" (.Format $iso) }}, {{ end -}}
   "inLanguage": {{ printf "%q" $lang }},
   "url": {{ printf "%q" .Permalink }},
-  "author": { "@type": "Person", "name": {{ printf "%q" $authorName }}, "url": {{ printf "%q" $authorURLAbs }} },
-  "publisher": { "@type": "Organization", "name": {{ printf "%q" .Site.Title }}, "url": {{ printf "%q" .Site.BaseURL }} }
+  {{- with $sameAs }}
+  "sameAs": [
+    {{- range $index, $url := . -}}
+      {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+    {{- end }}
+  ],
+  {{- end }}
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}{{- with $sameAs }},
+    "sameAs": [
+      {{- range $index, $url := . -}}
+        {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+      {{- end }}
+    ]{{- end }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": {{ printf "%q" .Site.Title }},
+    "url": {{ printf "%q" .Site.BaseURL }}{{- with $sameAs }},
+    "sameAs": [
+      {{- range $index, $url := . -}}
+        {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+      {{- end }}
+    ]{{- end }}
+  }
   {{- with .GetTerms "categories" -}}
   , "articleSection": {{ printf "%q" (index . 0).LinkTitle }},
     "keywords": [{{ range $i,$t := . }}{{ if $i }}, {{ end }}{{ printf "%q" $t.LinkTitle }}{{ end }}]
