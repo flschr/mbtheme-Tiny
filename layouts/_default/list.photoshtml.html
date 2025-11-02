@@ -6,6 +6,7 @@
 
   {{ $pages := sort (where .Site.RegularPages "Type" "in" (slice "post" "photo")) "Date" "desc" }}
   {{ $.Scratch.Set "currentMonth" "" }}
+  {{ $.Scratch.Set "sectionOpen" false }}
   {{ $imageIndex := 0 }}
 
   {{/* Deutsche Monatsnamen */}}
@@ -35,13 +36,17 @@
         {{ end }}
 
         {{/* Check if we need to start a new month section */}}
+        {{ $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") }}
         {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
-          {{ if ne ($.Scratch.Get "currentMonth") "" }}
+          {{ if $.Scratch.Get "sectionOpen" }}
             </div> {{/* Close previous grid */}}
-            <h2 class="month-header">{{ $monthYear }}</h2>
+          </section>
           {{ end }}
-          <div class="photos-grid e-content">
+          <section class="month-section" id="month-{{ $monthId }}">
+            <h2 class="month-header">{{ $monthYear }}</h2>
+            <div class="photos-grid e-content">
           {{ $.Scratch.Set "currentMonth" $monthYear }}
+          {{ $.Scratch.Set "sectionOpen" true }}
         {{ end }}
 
         <a class="photo-tile{{ if $p.Title }} has-title{{ else }} no-title{{ end }}"
@@ -72,13 +77,17 @@
         {{ $eager := lt $imageIndex 8 }}
 
         {{/* Check if we need to start a new month section */}}
+        {{ $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") }}
         {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
-          {{ if ne ($.Scratch.Get "currentMonth") "" }}
+          {{ if $.Scratch.Get "sectionOpen" }}
             </div> {{/* Close previous grid */}}
-            <h2 class="month-header">{{ $monthYear }}</h2>
+          </section>
           {{ end }}
-          <div class="photos-grid e-content">
+          <section class="month-section" id="month-{{ $monthId }}">
+            <h2 class="month-header">{{ $monthYear }}</h2>
+            <div class="photos-grid e-content">
           {{ $.Scratch.Set "currentMonth" $monthYear }}
+          {{ $.Scratch.Set "sectionOpen" true }}
         {{ end }}
 
         <a class="photo-tile{{ if $p.Title }} has-title{{ else }} no-title{{ end }}"
@@ -101,8 +110,9 @@
   {{ end }}
 
   {{/* Close last grid */}}
-  {{ if ne ($.Scratch.Get "currentMonth") "" }}
+  {{ if $.Scratch.Get "sectionOpen" }}
     </div>
+    </section>
   {{ end }}
 
 </div>

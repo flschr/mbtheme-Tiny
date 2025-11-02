@@ -115,6 +115,21 @@ h1, h2 {
 	margin-top: 0;
 }
 
+.post-content h1 {
+	font-size: 1.5em;
+	margin-top: 0;
+	margin-bottom: 0.6em;
+}
+
+.post-content h1 a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.post-content h1 a:hover {
+	text-decoration: underline;
+}
+
 .p-name {
 	text-wrap: balance;
 }
