@@ -155,10 +155,9 @@
         rgba(0, 0, 0, 0.2) 70%,
         transparent 100%);
       border-radius: inherit;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity var(--transition-speed) ease,
-                  transform var(--transition-speed) ease;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity var(--transition-speed) ease;
       pointer-events: none;
       backdrop-filter: blur(4px);
       z-index: 2;
@@ -172,7 +171,6 @@
     .photo-tile:hover .title-badge,
     .photo-tile:focus-visible .title-badge {
       opacity: 1;
-      transform: translateY(0);
     }
 
     /* Focus States für Accessibility */
