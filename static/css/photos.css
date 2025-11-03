@@ -123,7 +123,8 @@
 }
 
 .photo-tile.has-title:hover::before,
-.photo-tile.has-title:focus-visible::before {
+.photo-tile.has-title:focus-visible::before,
+.photo-tile.has-title.show-info::before {
   opacity: 1;
 }
 
@@ -151,7 +152,8 @@
 }
 
 .photo-tile:hover .date-badge,
-.photo-tile:focus-visible .date-badge {
+.photo-tile:focus-visible .date-badge,
+.photo-tile.show-info .date-badge {
   opacity: 1;
   transform: translateY(0);
 }
@@ -189,7 +191,8 @@
 }
 
 .photo-tile.has-title:hover .title-badge,
-.photo-tile.has-title:focus-visible .title-badge {
+.photo-tile.has-title:focus-visible .title-badge,
+.photo-tile.has-title.show-info .title-badge {
   opacity: 1;
   transform: translateY(0);
 }
