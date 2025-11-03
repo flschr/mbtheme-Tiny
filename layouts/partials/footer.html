@@ -30,7 +30,7 @@
       document.body.scrollTop = 0; // For Safari
       document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
 
-      if (mybutton && typeof mybutton.blur === "function") {
+      if (mybutton) {
         mybutton.blur();
       }
     }
@@ -53,10 +53,7 @@
           mybutton.style.display = "flex";
         } else {
           mybutton.style.display = "none";
-
-          if (typeof mybutton.blur === "function") {
-            mybutton.blur();
-          }
+          mybutton.blur();
         }
       };
 

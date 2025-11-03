@@ -67,12 +67,6 @@
   }
 }
 
-@media (max-width: 480px) {
-  .photos-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 /* Photo Tiles */
 .photo-tile {
   position: relative;
