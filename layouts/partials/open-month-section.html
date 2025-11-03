@@ -1,0 +1,31 @@
+{{/*
+  Partial: open-month-section.html
+
+  Öffnet bei Bedarf eine neue Monats-Sektion für die Foto-Galerie.
+  Schließt die vorherige Sektion, falls eine offen ist.
+
+  Verwendung:
+    {{ partial "open-month-section.html" (dict "page" $p "monthYear" $monthYear "context" $) }}
+
+  Parameter:
+    - page: Die aktuelle Page ($p)
+    - monthYear: String im Format "Januar 2024"
+    - context: Der Root-Context ($) für Scratch-Zugriff
+*/}}
+
+{{- $p := .page -}}
+{{- $monthYear := .monthYear -}}
+{{- $ctx := .context -}}
+{{- $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") -}}
+
+{{- if ne $monthYear ($ctx.Scratch.Get "currentMonth") -}}
+  {{- if $ctx.Scratch.Get "sectionOpen" -}}
+    </div> {{/* Close previous grid */}}
+  </section>
+  {{- end -}}
+  <section class="month-section" id="month-{{ $monthId }}">
+    <h2 class="month-header">{{ $monthYear }}</h2>
+    <div class="photos-grid e-content">
+  {{- $ctx.Scratch.Set "currentMonth" $monthYear -}}
+  {{- $ctx.Scratch.Set "sectionOpen" true -}}
+{{- end -}}

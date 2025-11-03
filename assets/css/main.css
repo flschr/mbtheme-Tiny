@@ -32,7 +32,10 @@
 	
 	/* Special */
 	--audio-link: #d32f2f;
-	
+	--success: #4caf50;
+	--shared-note-bg: #fff5f5;
+	--shared-note-text: #7a0000;
+
 	/* Spacing & Sizing */
 	--radius-default: 5px;
 	--radius-round: 40px;
@@ -75,6 +78,9 @@
 		
 		/* Special */
 		--audio-link: #ff6e6e;
+		--success: #50fa7b;
+		--shared-note-bg: #3f2020;
+		--shared-note-text: #ff9999;
 	}
 }
 
@@ -249,10 +255,6 @@ footer {
 footer .custom_footer {
 	font-size: 0.75em;
 	color: var(--accent2);
-}
-
-footer .attribution {
-	display: none;
 }
 
 
@@ -525,8 +527,8 @@ pre {
 }
 
 .copy-code-button.copied {
-	background-color: #4caf50;
-	color: #fff;
+	background-color: var(--success);
+	color: var(--button-text);
 }
 
 
@@ -690,11 +692,11 @@ iframe {
 }
 
 .microblog_shared_note {
-        background: #fff5f5;
+        background: var(--shared-note-bg);
         margin: 0 auto;
         padding: 5px;
         border-radius: var(--radius-default);
-        color: #7a0000;
+        color: var(--shared-note-text);
         width: fit-content;
 }
 
@@ -884,19 +886,6 @@ kbd {
 	border: 1px solid var(--accent2);
 	border-radius: 3px;
 	box-shadow: 0 2px 0 var(--accent2);
-}
-
-
-/* ==========================================================================
-   UTILITY CLASSES
-   ========================================================================== */
-
-.tiny-img {
-	max-width: 25em;
-}
-
-.tiny-text {
-	font-size: 0.6em;
 }
 
 

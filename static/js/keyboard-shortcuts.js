@@ -176,9 +176,7 @@
         inline: 'center'
       });
 
-      if (typeof tile.focus === 'function') {
-        tile.focus({ preventScroll: true });
-      }
+      tile.focus({ preventScroll: true });
 
       highlightPhoto(tile);
     }
@@ -259,9 +257,7 @@
       const tileIndex = photoTiles.indexOf(firstTile);
       if (tileIndex !== -1) {
         currentPhotoIndex = tileIndex;
-        if (typeof firstTile.focus === 'function') {
-          firstTile.focus({ preventScroll: true });
-        }
+        firstTile.focus({ preventScroll: true });
         highlightPhoto(firstTile);
       }
     }
@@ -401,7 +397,7 @@
     helpOverlay.style.display = 'none';
     helpOverlay.setAttribute('aria-hidden', 'true');
     setPageInert(false);
-    if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === 'function') {
+    if (previouslyFocusedElement) {
       previouslyFocusedElement.focus();
     }
   }

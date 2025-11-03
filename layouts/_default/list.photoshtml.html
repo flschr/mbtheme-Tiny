@@ -4,6 +4,9 @@
 <div class="photos content">
   <h1 class="sr-only">Foto-Archiv</h1>
 
+  {{/* Konstanten */}}
+  {{ $eagerLoadThreshold := 8 }}
+
   {{ $pages := sort (where .Site.RegularPages "Type" "in" (slice "post" "photo")) "Date" "desc" }}
   {{ $.Scratch.Set "currentMonth" "" }}
   {{ $.Scratch.Set "sectionOpen" false }}
@@ -23,7 +26,7 @@
     {{/* Micro.blog Photos */}}
     {{ with $p.Params.photos }}
       {{ range $i, $url := . }}
-        {{ $eager := lt $imageIndex 8 }}
+        {{ $eager := lt $imageIndex $eagerLoadThreshold }}
         {{ $isMBPhotos := or (hasPrefix $url "https://micro.blog/photos/") (hasPrefix $url "http://micro.blog/photos/") }}
         {{ $src200 := "" }}{{ $src400 := "" }}
 
@@ -35,19 +38,8 @@
           {{ $src400 = $url }}
         {{ end }}
 
-        {{/* Check if we need to start a new month section */}}
-        {{ $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") }}
-        {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
-          {{ if $.Scratch.Get "sectionOpen" }}
-            </div> {{/* Close previous grid */}}
-          </section>
-          {{ end }}
-          <section class="month-section" id="month-{{ $monthId }}">
-            <h2 class="month-header">{{ $monthYear }}</h2>
-            <div class="photos-grid e-content">
-          {{ $.Scratch.Set "currentMonth" $monthYear }}
-          {{ $.Scratch.Set "sectionOpen" true }}
-        {{ end }}
+        {{/* Open month section if needed */}}
+        {{ partial "open-month-section.html" (dict "page" $p "monthYear" $monthYear "context" $) }}
 
         <a class="photo-tile{{ if $p.Title }} has-title{{ else }} no-title{{ end }}"
            href="{{ $p.RelPermalink }}"
@@ -74,21 +66,10 @@
       {{ if not (or (hasPrefix $name "hero") (in $name "og-") (in $name "open-graph") (in $name "social") (in $name "thumb")) }}
         {{ $w200 := $img.Resize "200x q85" }}
         {{ $w400 := $img.Resize "400x q85" }}
-        {{ $eager := lt $imageIndex 8 }}
+        {{ $eager := lt $imageIndex $eagerLoadThreshold }}
 
-        {{/* Check if we need to start a new month section */}}
-        {{ $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") }}
-        {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
-          {{ if $.Scratch.Get "sectionOpen" }}
-            </div> {{/* Close previous grid */}}
-          </section>
-          {{ end }}
-          <section class="month-section" id="month-{{ $monthId }}">
-            <h2 class="month-header">{{ $monthYear }}</h2>
-            <div class="photos-grid e-content">
-          {{ $.Scratch.Set "currentMonth" $monthYear }}
-          {{ $.Scratch.Set "sectionOpen" true }}
-        {{ end }}
+        {{/* Open month section if needed */}}
+        {{ partial "open-month-section.html" (dict "page" $p "monthYear" $monthYear "context" $) }}
 
         <a class="photo-tile{{ if $p.Title }} has-title{{ else }} no-title{{ end }}"
            href="{{ $p.RelPermalink }}"
