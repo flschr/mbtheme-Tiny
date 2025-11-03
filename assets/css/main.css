@@ -957,24 +957,34 @@ kbd {
         box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
-#myBtn:hover,
 #myBtn:focus-visible {
         --btn-bg: #4a4a4a;
         --btn-color: #f7f7f7;
         opacity: 1;
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        outline: 2px solid currentColor;
+        outline-offset: 4px;
 }
 
-#myBtn:hover::before,
 #myBtn:focus-visible::before {
         --ring-active-color: #f7f7f7;
         --ring-track-color: rgba(255, 255, 255, 0.35);
 }
 
-#myBtn:focus-visible {
-        outline: 2px solid currentColor;
-        outline-offset: 4px;
+@media (hover: hover) {
+        #myBtn:hover {
+                --btn-bg: #4a4a4a;
+                --btn-color: #f7f7f7;
+                opacity: 1;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        #myBtn:hover::before {
+                --ring-active-color: #f7f7f7;
+                --ring-track-color: rgba(255, 255, 255, 0.35);
+        }
 }
 
 #myBtn:active {
@@ -1001,15 +1011,26 @@ kbd {
                 box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
         }
 
-        #myBtn:hover,
         #myBtn:focus-visible {
                 --btn-bg: #f8f8f2;
                 --btn-color: #1f1f1f;
                 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
         }
 
-        #myBtn:hover::before,
         #myBtn:focus-visible::before {
+                --ring-active-color: #1f1f1f;
+                --ring-track-color: rgba(31, 31, 31, 0.4);
+        }
+}
+
+@media (prefers-color-scheme: dark) and (hover: hover) {
+        #myBtn:hover {
+                --btn-bg: #f8f8f2;
+                --btn-color: #1f1f1f;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        #myBtn:hover::before {
                 --ring-active-color: #1f1f1f;
                 --ring-track-color: rgba(31, 31, 31, 0.4);
         }
