@@ -32,7 +32,10 @@
 	
 	/* Special */
 	--audio-link: #d32f2f;
-	
+	--success: #4caf50;
+	--shared-note-bg: #fff5f5;
+	--shared-note-text: #7a0000;
+
 	/* Spacing & Sizing */
 	--radius-default: 5px;
 	--radius-round: 40px;
@@ -75,6 +78,9 @@
 		
 		/* Special */
 		--audio-link: #ff6e6e;
+		--success: #50fa7b;
+		--shared-note-bg: #3f2020;
+		--shared-note-text: #ff9999;
 	}
 }
 
@@ -525,8 +531,8 @@ pre {
 }
 
 .copy-code-button.copied {
-	background-color: #4caf50;
-	color: #fff;
+	background-color: var(--success);
+	color: var(--button-text);
 }
 
 
@@ -690,11 +696,11 @@ iframe {
 }
 
 .microblog_shared_note {
-        background: #fff5f5;
+        background: var(--shared-note-bg);
         margin: 0 auto;
         padding: 5px;
         border-radius: var(--radius-default);
-        color: #7a0000;
+        color: var(--shared-note-text);
         width: fit-content;
 }
 

@@ -1,7 +1,31 @@
-// Add copy button to all code blocks
-document.addEventListener('DOMContentLoaded', function() {
-  // Find all code blocks with syntax highlighting
-  const codeBlocks = document.querySelectorAll('.highlight');
+// Add copy button to all code blocks with event delegation
+(function() {
+  'use strict';
+
+  // Constants
+  const SELECTORS = {
+    CODE_BLOCK: '.highlight',
+    COPY_BUTTON: '.copy-code-button',
+    CODE: 'pre code, pre'
+  };
+
+  const CLASSES = {
+    WRAPPER: 'code-block-wrapper',
+    BUTTON: 'copy-code-button',
+    COPIED: 'copied',
+    ERROR: 'error'
+  };
+
+  const MESSAGES = {
+    DEFAULT: 'Copy',
+    COPIED: 'Copied!',
+    FAILED: 'Copy failed',
+    EMPTY: 'Nothing to copy'
+  };
+
+  const FEEDBACK_DURATION = 2000;
+
+  // Check clipboard capabilities
   const hasClipboardAPI = typeof navigator !== 'undefined' &&
     navigator.clipboard && typeof navigator.clipboard.writeText === 'function';
 
@@ -21,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   const canCopy = hasClipboardAPI || hasExecCommand;
 
+  // Fallback copy method using execCommand
   function copyWithFallback(text) {
     return new Promise(function(resolve, reject) {
       const textarea = document.createElement('textarea');
@@ -55,72 +80,113 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  codeBlocks.forEach(function(codeBlock) {
+  // Copy text to clipboard
+  function copyText(text) {
+    if (hasClipboardAPI) {
+      return navigator.clipboard.writeText(text);
+    }
+
+    if (hasExecCommand) {
+      return copyWithFallback(text);
+    }
+
+    return Promise.reject(new Error('Copy to clipboard is not supported'));
+  }
+
+  // Show temporary feedback message
+  function showTemporaryMessage(button, message, className) {
+    button.textContent = message;
+    if (className) {
+      button.classList.add(className);
+    }
+
+    setTimeout(function() {
+      button.textContent = MESSAGES.DEFAULT;
+      if (className) {
+        button.classList.remove(className);
+      }
+    }, FEEDBACK_DURATION);
+  }
+
+  // Initialize code blocks with copy buttons
+  function initializeCodeBlocks() {
     if (!canCopy) {
       return;
     }
 
-    // Create wrapper for positioning
-    const wrapper = document.createElement('div');
-    wrapper.className = 'code-block-wrapper';
+    const codeBlocks = document.querySelectorAll(SELECTORS.CODE_BLOCK);
 
-    // Wrap the code block
-    codeBlock.parentNode.insertBefore(wrapper, codeBlock);
-    wrapper.appendChild(codeBlock);
-
-    // Create copy button
-    const copyButton = document.createElement('button');
-    copyButton.className = 'copy-code-button';
-    copyButton.type = 'button';
-    copyButton.setAttribute('aria-label', 'Copy code');
-    copyButton.setAttribute('aria-live', 'polite');
-    copyButton.textContent = 'Copy';
-
-    // Insert button before code block
-    wrapper.insertBefore(copyButton, codeBlock);
-
-    function showTemporaryMessage(message, className) {
-      const originalText = 'Copy';
-      copyButton.textContent = message;
-      if (className) {
-        copyButton.classList.add(className);
-      }
-
-      setTimeout(function() {
-        copyButton.textContent = originalText;
-        if (className) {
-          copyButton.classList.remove(className);
-        }
-      }, 2000);
-    }
-
-    function copyText(text) {
-      if (hasClipboardAPI) {
-        return navigator.clipboard.writeText(text);
-      }
-
-      if (hasExecCommand) {
-        return copyWithFallback(text);
-      }
-
-      return Promise.reject(new Error('Copy to clipboard is not supported'));
-    }
-
-    // Add click handler
-    copyButton.addEventListener('click', function() {
-      const code = codeBlock.querySelector('pre code') || codeBlock.querySelector('pre');
-      const textToCopy = code ? code.textContent : '';
-
-      if (!textToCopy) {
-        showTemporaryMessage('Nothing to copy', 'error');
+    codeBlocks.forEach(function(codeBlock) {
+      // Skip if already wrapped
+      if (codeBlock.parentNode.classList.contains(CLASSES.WRAPPER)) {
         return;
       }
 
-      copyText(textToCopy).then(function() {
-        showTemporaryMessage('Copied!', 'copied');
-      }).catch(function() {
-        showTemporaryMessage('Copy failed', 'error');
-      });
+      // Create wrapper for positioning
+      const wrapper = document.createElement('div');
+      wrapper.className = CLASSES.WRAPPER;
+
+      // Wrap the code block
+      codeBlock.parentNode.insertBefore(wrapper, codeBlock);
+      wrapper.appendChild(codeBlock);
+
+      // Create copy button
+      const copyButton = document.createElement('button');
+      copyButton.className = CLASSES.BUTTON;
+      copyButton.type = 'button';
+      copyButton.setAttribute('aria-label', 'Copy code');
+      copyButton.setAttribute('aria-live', 'polite');
+      copyButton.textContent = MESSAGES.DEFAULT;
+
+      // Insert button before code block
+      wrapper.insertBefore(copyButton, codeBlock);
     });
+  }
+
+  // Event delegation: Handle all copy button clicks
+  function handleCopyClick(event) {
+    const button = event.target;
+
+    // Check if clicked element is a copy button
+    if (!button.matches(SELECTORS.COPY_BUTTON)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    // Find the code block
+    const wrapper = button.closest('.' + CLASSES.WRAPPER);
+    if (!wrapper) {
+      return;
+    }
+
+    const codeBlock = wrapper.querySelector(SELECTORS.CODE_BLOCK);
+    if (!codeBlock) {
+      return;
+    }
+
+    const code = codeBlock.querySelector(SELECTORS.CODE);
+    const textToCopy = code ? code.textContent : '';
+
+    if (!textToCopy) {
+      showTemporaryMessage(button, MESSAGES.EMPTY, CLASSES.ERROR);
+      return;
+    }
+
+    copyText(textToCopy)
+      .then(function() {
+        showTemporaryMessage(button, MESSAGES.COPIED, CLASSES.COPIED);
+      })
+      .catch(function() {
+        showTemporaryMessage(button, MESSAGES.FAILED, CLASSES.ERROR);
+      });
+  }
+
+  // Initialize on DOM ready
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeCodeBlocks();
+
+    // Event delegation: Single event listener for all copy buttons
+    document.body.addEventListener('click', handleCopyClick);
   });
-});
+})();
