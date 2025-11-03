@@ -35,19 +35,8 @@
           {{ $src400 = $url }}
         {{ end }}
 
-        {{/* Check if we need to start a new month section */}}
-        {{ $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") }}
-        {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
-          {{ if $.Scratch.Get "sectionOpen" }}
-            </div> {{/* Close previous grid */}}
-          </section>
-          {{ end }}
-          <section class="month-section" id="month-{{ $monthId }}">
-            <h2 class="month-header">{{ $monthYear }}</h2>
-            <div class="photos-grid e-content">
-          {{ $.Scratch.Set "currentMonth" $monthYear }}
-          {{ $.Scratch.Set "sectionOpen" true }}
-        {{ end }}
+        {{/* Open month section if needed */}}
+        {{ partial "open-month-section.html" (dict "page" $p "monthYear" $monthYear "context" $) }}
 
         <a class="photo-tile{{ if $p.Title }} has-title{{ else }} no-title{{ end }}"
            href="{{ $p.RelPermalink }}"
@@ -76,19 +65,8 @@
         {{ $w400 := $img.Resize "400x q85" }}
         {{ $eager := lt $imageIndex 8 }}
 
-        {{/* Check if we need to start a new month section */}}
-        {{ $monthId := printf "%s-%s" ($p.Date.Format "2006") ($p.Date.Format "01") }}
-        {{ if ne $monthYear ($.Scratch.Get "currentMonth") }}
-          {{ if $.Scratch.Get "sectionOpen" }}
-            </div> {{/* Close previous grid */}}
-          </section>
-          {{ end }}
-          <section class="month-section" id="month-{{ $monthId }}">
-            <h2 class="month-header">{{ $monthYear }}</h2>
-            <div class="photos-grid e-content">
-          {{ $.Scratch.Set "currentMonth" $monthYear }}
-          {{ $.Scratch.Set "sectionOpen" true }}
-        {{ end }}
+        {{/* Open month section if needed */}}
+        {{ partial "open-month-section.html" (dict "page" $p "monthYear" $monthYear "context" $) }}
 
         <a class="photo-tile{{ if $p.Title }} has-title{{ else }} no-title{{ end }}"
            href="{{ $p.RelPermalink }}"
