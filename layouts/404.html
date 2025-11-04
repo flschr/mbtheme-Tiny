@@ -5,18 +5,11 @@
 {{ define "main" }}
 <div class="page">
   <article class="post-content">
-    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel A, B, C. Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
+    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel: <span id="random-titles">Lädt...</span>. Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
     </p>
-</p>
 
     <div style="margin: 2em 0;">
       <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" style="width: 100%; height: auto; border-radius: var(--radius-default);">
-    </div>
-
-    {{/* Zufällige Artikelempfehlungen */}}
-    <div id="recommendations">
-      <h2>Vielleicht interessieren dich diese Artikel:</h2>
-      <ul class="post-list" id="recommendation-list"></ul>
     </div>
 
     <p style="text-align: center; margin-top: 2em; color: var(--accent2);">
@@ -72,21 +65,23 @@
   // Zeige zufällige Empfehlungen an
   function displayRecommendations() {
     const recommendations = getRandomPosts(postsData, 3);
-    const listElement = document.getElementById('recommendation-list');
+    const titlesElement = document.getElementById('random-titles');
 
-    recommendations.forEach(post => {
-      const li = document.createElement('li');
-      li.className = 'post-item';
-      li.innerHTML = `
-        <div class="post-preview">
-          <a href="${post.url}" class="post-date u-url">
-            <time class="dt-published" datetime="${post.datetime}">${post.date}</time> ∞
-          </a>
-          ${post.title ? `<h2 class="post-title p-name"><a href="${post.url}">${post.title}</a></h2>` : ''}
-        </div>
-      `;
-      listElement.appendChild(li);
-    });
+    if (!titlesElement) {
+      console.warn('404 - random titles element not found!');
+      return;
+    }
+
+    const titles = recommendations
+      .map(post => post.title)
+      .filter(Boolean);
+
+    if (titles.length === 0) {
+      titlesElement.textContent = 'Keine Empfehlungen verfügbar';
+      return;
+    }
+
+    titlesElement.textContent = titles.join(', ');
   }
 
   // Countdown und Auto-Redirect
