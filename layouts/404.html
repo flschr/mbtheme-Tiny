@@ -1,0 +1,47 @@
+{{ define "title" }}
+404 - Seite nicht gefunden | {{ .Site.Title }}
+{{ end }}
+
+{{ define "main" }}
+<div class="page page-404">
+  <div class="error-content">
+    <h1>Very oooopsi!</h1>
+    <p class="error-message">Diese Seite gibt es leider nicht.</p>
+
+    <div class="error-actions">
+      <p>
+        Hier ist <a href="/suche">die Suche</a> oder probier es einfach mit einem <a href="/random">zufälligen Artikel</a>.
+      </p>
+    </div>
+
+    <div class="error-image">
+      <img src="/uploads/2025/einhorn-kotzt-derbe.webp" alt="Ein Einhorn erbricht einen Regenbogen." loading="lazy">
+    </div>
+
+    {{ $recentPosts := first 5 (where .Site.RegularPages "Type" "post") }}
+    {{ if $recentPosts }}
+    <div class="recent-posts">
+      <h2>Oder vielleicht interessiert dich:</h2>
+      <ul class="post-links">
+        {{ range $recentPosts }}
+        <li>
+          <a href="{{ .Permalink }}">
+            {{ if .Title }}
+              {{ .Title }}
+            {{ else }}
+              {{ .Summary | plainify | truncate 60 }}
+            {{ end }}
+          </a>
+          <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2. Jan 2006" }}</time>
+        </li>
+        {{ end }}
+      </ul>
+    </div>
+    {{ end }}
+
+    <div class="home-link">
+      <p><a href="/">← Zurück zur Startseite</a></p>
+    </div>
+  </div>
+</div>
+{{ end }}
