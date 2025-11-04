@@ -5,16 +5,33 @@
 {{ define "main" }}
 <div class="page">
   <article class="post-content">
-    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel: <span id="random-titles">Lädt...</span>. Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
-    </p>
+    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel:</p>
 
-    <div style="margin: 2em 0;">
-      <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" style="width: 100%; height: auto; border-radius: var(--radius-default);">
+    <div id="random-recommendations" class="random-recommendations" aria-live="polite">
+      <p>Lädt Empfehlungen …</p>
     </div>
 
-    <p style="text-align: center; margin-top: 2em; color: var(--accent2);">
-      Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
-    </p>
+    <nav class="not-found-cta" aria-label="Alternative Ziele">
+      <a class="not-found-cta__link" href="/">Zur Startseite</a>
+      <a class="not-found-cta__link" href="/archive/">Zum Archiv</a>
+      <a class="not-found-cta__link" href="/tags/">Zu den Tags</a>
+      <a class="not-found-cta__link" href="/random">Jetzt zufälligen Artikel öffnen</a>
+    </nav>
+
+    <div style="margin: 2em 0;">
+      <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900" style="width: 100%; height: auto; border-radius: var(--radius-default);">
+    </div>
+
+    <div class="countdown-wrapper" role="status" aria-live="polite">
+      <span class="countdown-text">Du wirst in <span id="countdown-value">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet …</span>
+      <div class="countdown-meter" aria-hidden="true">
+        <div class="countdown-meter__fill" id="countdown-progress"></div>
+      </div>
+    </div>
+
+    <noscript>
+      <p class="countdown-noscript">JavaScript ist deaktiviert. <a href="/random">Hier direkt einen zufälligen Artikel öffnen.</a></p>
+    </noscript>
   </article>
 </div>
 
@@ -65,34 +82,71 @@
   // Zeige zufällige Empfehlungen an
   function displayRecommendations() {
     const recommendations = getRandomPosts(postsData, 3);
-    const titlesElement = document.getElementById('random-titles');
+    const recommendationsElement = document.getElementById('random-recommendations');
 
-    if (!titlesElement) {
-      console.warn('404 - random titles element not found!');
+    if (!recommendationsElement) {
+      console.warn('404 - recommendations element not found!');
       return;
     }
 
-    const titles = recommendations
-      .map(post => post.title)
-      .filter(Boolean);
-
-    if (titles.length === 0) {
-      titlesElement.textContent = 'Keine Empfehlungen verfügbar';
+    if (!recommendations || recommendations.length === 0) {
+      recommendationsElement.textContent = 'Keine Empfehlungen verfügbar';
       return;
     }
 
-    titlesElement.textContent = titles.join(', ');
+    const list = document.createElement('ul');
+    list.className = 'random-recommendations__list';
+
+    recommendations.forEach(post => {
+      const item = document.createElement('li');
+      item.className = 'random-recommendations__item';
+
+      if (post.url && post.title) {
+        const link = document.createElement('a');
+        link.className = 'random-recommendations__link';
+        link.href = post.url;
+        link.textContent = post.title;
+        item.appendChild(link);
+      } else if (post.title) {
+        const title = document.createElement('span');
+        title.textContent = post.title;
+        item.appendChild(title);
+      }
+
+      if (post.summary) {
+        const summary = document.createElement('p');
+        summary.className = 'random-recommendations__summary';
+        summary.textContent = post.summary;
+        item.appendChild(summary);
+      }
+
+      list.appendChild(item);
+    });
+
+    recommendationsElement.replaceChildren(list);
   }
 
   // Countdown und Auto-Redirect
   function startCountdown() {
-    let seconds = 9;
-    const countdownElement = document.getElementById('countdown');
+    const totalSeconds = 9;
+    let seconds = totalSeconds;
+    const countdownElement = document.getElementById('countdown-value');
+    const progressElement = document.getElementById('countdown-progress');
+
+    if (progressElement) {
+      progressElement.style.width = '0%';
+    }
 
     const interval = setInterval(() => {
       seconds--;
       if (countdownElement) {
         countdownElement.textContent = seconds;
+      }
+
+      if (progressElement) {
+        const elapsed = totalSeconds - seconds;
+        const progress = Math.min(Math.max(elapsed / totalSeconds, 0), 1) * 100;
+        progressElement.style.width = `${progress}%`;
       }
 
       if (seconds <= 0) {
