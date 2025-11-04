@@ -1031,7 +1031,7 @@ kbd {
    ========================================================================== */
 
 .page-404 {
-        text-align: center;
+        text-align: left;
         max-width: 42rem;
         margin: 0 auto;
         padding: 2rem 1rem;
@@ -1081,7 +1081,7 @@ kbd {
 .page-404 .recent-posts h2 {
         font-size: 1.3rem;
         margin-bottom: 1rem;
-        text-align: center;
+        text-align: left;
 }
 
 .page-404 .post-links {
