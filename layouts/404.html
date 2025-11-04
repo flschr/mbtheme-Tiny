@@ -18,30 +18,142 @@
       <img src="/uploads/2025/einhorn-kotzt-derbe.webp" alt="Ein Einhorn erbricht einen Regenbogen." loading="lazy">
     </div>
 
-    {{ $recentPosts := first 5 (where .Site.RegularPages "Type" "post") }}
-    {{ if $recentPosts }}
-    <div class="recent-posts">
-      <h2>Oder vielleicht interessiert dich:</h2>
-      <ul class="post-links">
-        {{ range $recentPosts }}
-        <li>
-          <a href="{{ .Permalink }}">
-            {{ if .Title }}
-              {{ .Title }}
-            {{ else }}
-              {{ .Summary | plainify | truncate 60 }}
-            {{ end }}
-          </a>
-          <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2. Jan 2006" }}</time>
-        </li>
-        {{ end }}
-      </ul>
+    {{/* Intelligente Artikelempfehlungen basierend auf der URL */}}
+    <div class="recent-posts" id="recommendations">
+      <h2 id="recommendation-reason">Lass mich schauen, was ich für dich finden kann...</h2>
+      <ul class="post-links" id="recommendation-list"></ul>
     </div>
-    {{ end }}
 
     <div class="home-link">
       <p><a href="/">← Zurück zur Startseite</a></p>
     </div>
   </div>
 </div>
+
+{{/* Generiere Posts-Daten als JSON für JavaScript */}}
+<script type="application/json" id="posts-data">
+{{- $posts := slice -}}
+{{- range where .Site.RegularPages "Type" "post" -}}
+  {{- $tags := slice -}}
+  {{- range .Params.tags -}}
+    {{- $tags = $tags | append (lower .) -}}
+  {{- end -}}
+  {{- $post := dict "title" .Title "url" .Permalink "date" (.Date.Format "2. Jan 2006") "datetime" (.Date.Format "2006-01-02") "tags" $tags "summary" (.Summary | plainify | truncate 100) -}}
+  {{- $posts = $posts | append $post -}}
+{{- end -}}
+{{- $posts | jsonify -}}
+</script>
+
+<script>
+(function() {
+  // Lade Posts-Daten
+  const postsData = JSON.parse(document.getElementById('posts-data').textContent);
+
+  // Extrahiere Keywords aus der URL
+  function extractKeywords(url) {
+    const path = url.replace(/^\/+|\/+$/g, ''); // Entferne führende/trailing slashes
+    const slug = path.split('/').pop() || path; // Letzter Teil der URL
+
+    // Bereinige: entferne Zahlen, ersetze Trennzeichen, filtere kurze Wörter
+    const cleanSlug = slug
+      .replace(/[0-9]+/g, '')
+      .replace(/[-_]/g, ' ')
+      .replace(/[^a-zA-ZäöüßÄÖÜ ]/g, ' ')
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(word => word.length > 2);
+
+    return cleanSlug;
+  }
+
+  // Finde passende Posts
+  function findRecommendations(keywords) {
+    const matches = [];
+    const scores = new Map();
+
+    postsData.forEach(post => {
+      let score = 0;
+      const lowerTitle = post.title.toLowerCase();
+
+      keywords.forEach(keyword => {
+        // Exakter Tag-Match: höchste Priorität
+        if (post.tags && post.tags.includes(keyword)) {
+          score += 10;
+        }
+
+        // Tag enthält Keyword
+        if (post.tags && post.tags.some(tag => tag.includes(keyword))) {
+          score += 5;
+        }
+
+        // Keyword im Titel
+        if (lowerTitle.includes(keyword)) {
+          score += 3;
+        }
+      });
+
+      if (score > 0) {
+        scores.set(post, score);
+        matches.push(post);
+      }
+    });
+
+    // Sortiere nach Score
+    matches.sort((a, b) => scores.get(b) - scores.get(a));
+
+    return matches.slice(0, 5);
+  }
+
+  // Zeige Empfehlungen an
+  function displayRecommendations() {
+    const currentPath = window.location.pathname;
+    const keywords = extractKeywords(currentPath);
+
+    let recommendations = [];
+    let reason = '';
+
+    if (keywords.length > 0) {
+      recommendations = findRecommendations(keywords);
+
+      if (recommendations.length > 0) {
+        if (keywords.length > 1) {
+          reason = 'Basierend auf deiner Suche habe ich diese Artikel gefunden:';
+        } else {
+          reason = `Vielleicht meintest du einen dieser Artikel über <strong>${keywords[0]}</strong>:`;
+        }
+      }
+    }
+
+    // Fallback: Zeige neueste Posts
+    if (recommendations.length === 0) {
+      recommendations = postsData.slice(0, 5);
+      reason = 'Obwohl ich nicht genau weiß, wonach du suchst, könnten dich diese Artikel interessieren:';
+    }
+
+    // Aktualisiere DOM
+    const reasonElement = document.getElementById('recommendation-reason');
+    const listElement = document.getElementById('recommendation-list');
+
+    reasonElement.innerHTML = reason;
+
+    recommendations.forEach(post => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <a href="${post.url}">
+          ${post.title || post.summary}
+        </a>
+        <time datetime="${post.datetime}">${post.date}</time>
+      `;
+      listElement.appendChild(li);
+    });
+  }
+
+  // Führe aus, wenn DOM bereit ist
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', displayRecommendations);
+  } else {
+    displayRecommendations();
+  }
+})();
+</script>
 {{ end }}
