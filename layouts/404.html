@@ -12,11 +12,15 @@
       <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" style="width: 100%; height: auto; border-radius: var(--radius-default);">
     </div>
 
-    {{/* Intelligente Artikelempfehlungen basierend auf der URL */}}
+    {{/* Zufällige Artikelempfehlungen */}}
     <div id="recommendations">
-      <h2 id="recommendation-reason">Lass mich schauen, was ich für dich finden kann...</h2>
+      <h2>Vielleicht interessieren dich diese Artikel:</h2>
       <ul class="post-list" id="recommendation-list"></ul>
     </div>
+
+    <p style="text-align: center; margin-top: 2em; color: var(--accent2);">
+      Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
+    </p>
   </article>
 </div>
 
@@ -41,7 +45,7 @@
   // Lade Posts-Daten
   const postsDataElement = document.getElementById('posts-data');
   if (!postsDataElement) {
-    console.error('404 Debug - posts-data element not found!');
+    console.error('404 - posts-data element not found!');
     return;
   }
 
@@ -49,123 +53,25 @@
   try {
     postsData = JSON.parse(postsDataElement.textContent);
   } catch (e) {
-    console.error('404 Debug - Error parsing posts data:', e);
+    console.error('404 - Error parsing posts data:', e);
     return;
   }
 
   if (!postsData || postsData.length === 0) {
-    console.warn('404 Debug - No posts data available!');
+    console.warn('404 - No posts data available!');
+    return;
   }
 
-  // Extrahiere Keywords aus der URL
-  function extractKeywords(url) {
-    const path = url.replace(/^\/+|\/+$/g, ''); // Entferne führende/trailing slashes
-    const slug = path.split('/').pop() || path; // Letzter Teil der URL
-
-    // Bereinige: entferne Zahlen, ersetze Trennzeichen, filtere kurze Wörter
-    const cleanSlug = slug
-      .replace(/[0-9]+/g, '')
-      .replace(/[-_]/g, ' ')
-      .replace(/[^a-zA-ZäöüßÄÖÜ ]/g, ' ')
-      .toLowerCase()
-      .split(/\s+/)
-      .filter(word => word.length > 2);
-
-    return cleanSlug;
+  // Wähle 3 zufällige Posts aus
+  function getRandomPosts(posts, count) {
+    const shuffled = [...posts].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, Math.min(count, posts.length));
   }
 
-  // Finde passende Posts
-  function findRecommendations(keywords) {
-    const matches = [];
-    const scores = new Map();
-
-    console.log('404 Debug - Searching for keywords:', keywords);
-
-    postsData.forEach(post => {
-      let score = 0;
-      const lowerTitle = post.title.toLowerCase();
-
-      keywords.forEach(keyword => {
-        // Exakter Tag-Match: höchste Priorität
-        if (post.tags && post.tags.includes(keyword)) {
-          score += 10;
-          console.log(`404 Debug - Exact tag match: "${keyword}" in post "${post.title}"`);
-        }
-
-        // Tag enthält Keyword
-        if (post.tags && post.tags.some(tag => tag.includes(keyword))) {
-          score += 5;
-          console.log(`404 Debug - Tag contains: "${keyword}" in post "${post.title}"`);
-        }
-
-        // Keyword im Titel
-        if (lowerTitle.includes(keyword)) {
-          score += 3;
-          console.log(`404 Debug - Title contains: "${keyword}" in post "${post.title}"`);
-        }
-      });
-
-      if (score > 0) {
-        scores.set(post, score);
-        matches.push(post);
-      }
-    });
-
-    // Sortiere nach Score
-    matches.sort((a, b) => scores.get(b) - scores.get(a));
-
-    console.log('404 Debug - Total matches found:', matches.length);
-    if (matches.length > 0) {
-      console.log('404 Debug - Top match:', matches[0].title, 'Score:', scores.get(matches[0]));
-    }
-
-    return matches.slice(0, 5);
-  }
-
-  // Zeige Empfehlungen an
+  // Zeige zufällige Empfehlungen an
   function displayRecommendations() {
-    const currentPath = window.location.pathname;
-    const keywords = extractKeywords(currentPath);
-
-    console.log('404 Debug - Total posts loaded:', postsData.length);
-    console.log('404 Debug - Current path:', currentPath);
-    console.log('404 Debug - Extracted keywords:', keywords);
-
-    let recommendations = [];
-    let reason = '';
-
-    if (keywords.length > 0) {
-      recommendations = findRecommendations(keywords);
-      console.log('404 Debug - Found recommendations:', recommendations.length);
-
-      if (recommendations.length > 0) {
-        if (keywords.length > 1) {
-          reason = 'Basierend auf deiner Suche habe ich diese Artikel gefunden:';
-        } else {
-          reason = `Vielleicht meintest du einen dieser Artikel über <strong>${keywords[0]}</strong>:`;
-        }
-      }
-    }
-
-    // Fallback: Zeige neueste Posts
-    if (recommendations.length === 0) {
-      console.log('404 Debug - Using fallback (newest posts)');
-      recommendations = postsData.slice(0, 5);
-      reason = 'Obwohl ich nicht genau weiß, wonach du suchst, könnten dich diese Artikel interessieren:';
-    }
-
-    // Aktualisiere DOM
-    const recommendationsSection = document.getElementById('recommendations');
-    const reasonElement = document.getElementById('recommendation-reason');
+    const recommendations = getRandomPosts(postsData, 3);
     const listElement = document.getElementById('recommendation-list');
-
-    if (recommendations.length === 0) {
-      // Verstecke Sektion, wenn keine Empfehlungen
-      recommendationsSection.style.display = 'none';
-      return;
-    }
-
-    reasonElement.innerHTML = reason;
 
     recommendations.forEach(post => {
       const li = document.createElement('li');
@@ -182,11 +88,33 @@
     });
   }
 
+  // Countdown und Auto-Redirect
+  function startCountdown() {
+    let seconds = 9;
+    const countdownElement = document.getElementById('countdown');
+
+    const interval = setInterval(() => {
+      seconds--;
+      if (countdownElement) {
+        countdownElement.textContent = seconds;
+      }
+
+      if (seconds <= 0) {
+        clearInterval(interval);
+        window.location.href = '/random';
+      }
+    }, 1000);
+  }
+
   // Führe aus, wenn DOM bereit ist
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', displayRecommendations);
+    document.addEventListener('DOMContentLoaded', () => {
+      displayRecommendations();
+      startCountdown();
+    });
   } else {
     displayRecommendations();
+    startCountdown();
   }
 })();
 </script>
