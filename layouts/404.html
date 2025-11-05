@@ -5,22 +5,23 @@
 {{ define "main" }}
 <div class="page">
   <article class="post-content">
-    <p>Very oooopsi! Diese Seite gibt es leider nicht. Du wirst in <span id="countdown-value">6</span> Sekunden zu einem zufälligen Qualitätsartikel weitergeleitet.
+    <p>Very oooopsi! Diese Seite gibt es leider nicht. Du wirst in <noscript>Kürze</noscript><span id="countdown-container" style="display:none"><span id="countdown-value">6</span> Sekunden</span> zu einem zufälligen Qualitätsartikel weitergeleitet.</p>
 
-    <noscript>
-      Du wirst in Kürze zu einem zufälligen Qualitätsartikel weitergeleitet.
-    </noscript></p>
-
-      <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900">
+    <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900">
   </article>
 </div>
 
 <script>
 (function() {
+  const countdownContainer = document.getElementById('countdown-container');
   const countdownElement = document.getElementById('countdown-value');
-  if (!countdownElement) {
+
+  if (!countdownContainer || !countdownElement) {
     return;
   }
+
+  // Countdown-Container einblenden
+  countdownContainer.style.display = 'inline';
 
   let seconds = 6;
   countdownElement.textContent = seconds;
