@@ -5,16 +5,33 @@
 {{ define "main" }}
 <div class="page">
   <article class="post-content">
-    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel: <span id="random-titles">Lädt...</span>. Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
-    </p>
+    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel:</p>
+
+    <section id="random-recommendations" class="callout" aria-live="polite">
+      <p>Lädt Empfehlungen …</p>
+    </section>
+
+    <nav aria-label="Alternative Ziele">
+      <ul>
+        <li><a href="/">Zur Startseite</a></li>
+        <li><a href="/archive/">Zum Archiv</a></li>
+        <li><a href="/tags/">Zu den Tags</a></li>
+        <li><a href="/random">Jetzt zufälligen Artikel öffnen</a></li>
+      </ul>
+    </nav>
 
     <div style="margin: 2em 0;">
-      <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" style="width: 100%; height: auto; border-radius: var(--radius-default);">
+      <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900" style="width: 100%; height: auto; border-radius: var(--radius-default);">
     </div>
 
-    <p style="text-align: center; margin-top: 2em; color: var(--accent2);">
-      Du wirst in <span id="countdown">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet...
-    </p>
+    <aside class="note" role="status" aria-live="polite">
+      <p>Du wirst in <span id="countdown-value">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet …</p>
+      <progress id="countdown-progress" max="9" value="0">Fortschritt: 0%</progress>
+    </aside>
+
+    <noscript>
+      <p class="alert">JavaScript ist deaktiviert. <a href="/random">Hier direkt einen zufälligen Artikel öffnen.</a></p>
+    </noscript>
   </article>
 </div>
 
@@ -65,34 +82,75 @@
   // Zeige zufällige Empfehlungen an
   function displayRecommendations() {
     const recommendations = getRandomPosts(postsData, 3);
-    const titlesElement = document.getElementById('random-titles');
+    const recommendationsElement = document.getElementById('random-recommendations');
 
-    if (!titlesElement) {
-      console.warn('404 - random titles element not found!');
+    if (!recommendationsElement) {
+      console.warn('404 - recommendations element not found!');
       return;
     }
 
-    const titles = recommendations
-      .map(post => post.title)
-      .filter(Boolean);
-
-    if (titles.length === 0) {
-      titlesElement.textContent = 'Keine Empfehlungen verfügbar';
+    if (!recommendations || recommendations.length === 0) {
+      recommendationsElement.textContent = 'Keine Empfehlungen verfügbar';
       return;
     }
 
-    titlesElement.textContent = titles.join(', ');
+    const list = document.createElement('ul');
+    list.className = 'post-list';
+
+    recommendations.forEach(post => {
+      const item = document.createElement('li');
+
+      if (post.url && post.title) {
+        const link = document.createElement('a');
+        link.className = 'u-url';
+        link.href = post.url;
+        link.textContent = post.title;
+        item.appendChild(link);
+      } else if (post.title) {
+        const title = document.createElement('span');
+        title.textContent = post.title;
+        item.appendChild(title);
+      }
+
+      if (post.summary) {
+        const summaryWrap = document.createElement('p');
+        const summaryText = document.createElement('small');
+        summaryText.textContent = post.summary;
+        summaryWrap.appendChild(summaryText);
+        item.appendChild(summaryWrap);
+      }
+
+      list.appendChild(item);
+    });
+
+    recommendationsElement.replaceChildren(list);
   }
 
   // Countdown und Auto-Redirect
   function startCountdown() {
-    let seconds = 9;
-    const countdownElement = document.getElementById('countdown');
+    const totalSeconds = 9;
+    let seconds = totalSeconds;
+    const countdownElement = document.getElementById('countdown-value');
+    const progressElement = document.getElementById('countdown-progress');
+
+    if (progressElement) {
+      progressElement.value = 0;
+      progressElement.max = totalSeconds;
+      progressElement.textContent = 'Fortschritt: 0%';
+    }
 
     const interval = setInterval(() => {
       seconds--;
       if (countdownElement) {
         countdownElement.textContent = seconds;
+      }
+
+      if (progressElement) {
+        const elapsed = totalSeconds - seconds;
+        const clamped = Math.min(Math.max(elapsed, 0), totalSeconds);
+        progressElement.value = clamped;
+        const percent = Math.round((clamped / totalSeconds) * 100);
+        progressElement.textContent = `Fortschritt: ${percent}%`;
       }
 
       if (seconds <= 0) {
