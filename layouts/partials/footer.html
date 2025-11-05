@@ -10,7 +10,6 @@
   <!-- Scroll to top button -->
   <button
     type="button"
-    onclick="topFunction()"
     id="myBtn"
     title="Zurück nach oben"
     aria-label="Zurück nach oben">
@@ -19,52 +18,16 @@
 
   <!-- JavaScript with cache busting -->
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
-  <script src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
-  <script src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
 
-  <script>
-    const mybutton = document.getElementById("myBtn");
+  <!-- Core utilities (defer: non-blocking) -->
+  <script defer src="{{ "/js/utils.js" | relURL }}?v={{ $buildHash }}"></script>
+  <script defer src="{{ "/js/scroll-to-top.js" | relURL }}?v={{ $buildHash }}"></script>
+  <script defer src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
 
-    // When the user clicks on the button, scroll to the top of the document
-    function topFunction() {
-      document.body.scrollTop = 0; // For Safari
-      document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
-
-      if (mybutton) {
-        mybutton.blur();
-      }
-    }
-
-    if (mybutton) {
-      const scrollFunction = () => {
-        const docElement = document.documentElement;
-        const body = document.body;
-        const scrollTop = docElement.scrollTop || body.scrollTop;
-        const docHeight = docElement.scrollHeight - docElement.clientHeight;
-
-        if (docHeight > 0) {
-          const progress = Math.min((scrollTop / docHeight) * 100, 100);
-          mybutton.style.setProperty("--scroll-progress", `${progress}%`);
-        } else {
-          mybutton.style.setProperty("--scroll-progress", "100%");
-        }
-
-        if (scrollTop > 20) {
-          mybutton.style.display = "flex";
-        } else {
-          mybutton.style.display = "none";
-          mybutton.blur();
-        }
-      };
-
-      // When the user scrolls down 20px from the top of the document, show the button
-      window.addEventListener("scroll", scrollFunction, { passive: true });
-
-      scrollFunction();
-    }
-
-    window.topFunction = topFunction;
-  </script>
+  <!-- Conditional: Copy-code only on pages with code blocks -->
+  {{ if or (findRE "<pre" .Content) (findRE "highlight" .Content) (findRE "```" .RawContent) }}
+  <script defer src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
+  {{ end }}
 
   <!-- Analytics -->
   <script data-goatcounter="https://stats.fischr.org/count"
