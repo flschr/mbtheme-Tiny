@@ -7,9 +7,14 @@
   <!-- DNS-Prefetch & Preconnect für externe Ressourcen -->
   <link rel="dns-prefetch" href="https://micro.blog">
   <link rel="preconnect" href="https://micro.blog" crossorigin>
+  {{ if .Params.photos }}
   <link rel="preconnect" href="https://micro.blog/photos" crossorigin>
+  {{ end }}
   <link rel="dns-prefetch" href="https://stats.fischr.org">
   <link rel="preconnect" href="https://stats.fischr.org" crossorigin>
+
+  <!-- Preload kritischer lokaler Assets -->
+  <link rel="preload" href="{{ "/js/utils.js" | relURL }}" as="script">
   
   <!-- Cache-Buster: Nutze Hugo Build-Zeit oder Git-Hash -->
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
