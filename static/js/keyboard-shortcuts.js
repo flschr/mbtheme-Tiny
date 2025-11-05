@@ -5,7 +5,7 @@
  * - Post-Listen (j/k für vor/zurück)
  * - Foto-Galerien (j/k für vor/zurück, n/p für Monate)
  * - Seiten-Navigation (n/p für Pagination)
- * - Utility-Funktionen (h für Home, t für Scroll-to-Top, / für Suche)
+ * - Utility-Funktionen (h für Home, t für Scroll-to-Top)
  * - Hilfe-Overlay (? zum Anzeigen)
  */
 (function() {
@@ -107,11 +107,6 @@
         case 't':
           e.preventDefault();
           scrollToTop();
-          break;
-
-        case '/':
-          e.preventDefault();
-          focusSearchField();
           break;
 
         case '?':
@@ -386,19 +381,6 @@
     }
   };
 
-  // Fokus auf Suchfeld
-  const focusSearchField = () => {
-    try {
-      const searchField = document.querySelector('input[type="search"]');
-      if (searchField) {
-        searchField.focus();
-        searchField.select();
-      }
-    } catch (error) {
-      console.error('Error focusing search field:', error);
-    }
-  };
-
   /* =========================================================================
      HELP OVERLAY
      ========================================================================= */
@@ -445,9 +427,6 @@
               <dl>
                 <dt><kbd>t</kbd></dt>
                 <dd>Nach oben scrollen</dd>
-
-                <dt><kbd>/</kbd></dt>
-                <dd>Suche fokussieren</dd>
 
                 <dt><kbd>?</kbd></dt>
                 <dd>Diese Hilfe anzeigen</dd>
