@@ -7,30 +7,30 @@
   <article class="post-content">
     <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel:</p>
 
-    <div id="random-recommendations" class="random-recommendations" aria-live="polite">
+    <section id="random-recommendations" class="callout" aria-live="polite">
       <p>Lädt Empfehlungen …</p>
-    </div>
+    </section>
 
-    <nav class="not-found-cta" aria-label="Alternative Ziele">
-      <a class="not-found-cta__link" href="/">Zur Startseite</a>
-      <a class="not-found-cta__link" href="/archive/">Zum Archiv</a>
-      <a class="not-found-cta__link" href="/tags/">Zu den Tags</a>
-      <a class="not-found-cta__link" href="/random">Jetzt zufälligen Artikel öffnen</a>
+    <nav aria-label="Alternative Ziele">
+      <ul>
+        <li><a href="/">Zur Startseite</a></li>
+        <li><a href="/archive/">Zum Archiv</a></li>
+        <li><a href="/tags/">Zu den Tags</a></li>
+        <li><a href="/random">Jetzt zufälligen Artikel öffnen</a></li>
+      </ul>
     </nav>
 
     <div style="margin: 2em 0;">
       <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900" style="width: 100%; height: auto; border-radius: var(--radius-default);">
     </div>
 
-    <div class="countdown-wrapper" role="status" aria-live="polite">
-      <span class="countdown-text">Du wirst in <span id="countdown-value">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet …</span>
-      <div class="countdown-meter" aria-hidden="true">
-        <div class="countdown-meter__fill" id="countdown-progress"></div>
-      </div>
-    </div>
+    <aside class="note" role="status" aria-live="polite">
+      <p>Du wirst in <span id="countdown-value">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet …</p>
+      <progress id="countdown-progress" max="9" value="0">Fortschritt: 0%</progress>
+    </aside>
 
     <noscript>
-      <p class="countdown-noscript">JavaScript ist deaktiviert. <a href="/random">Hier direkt einen zufälligen Artikel öffnen.</a></p>
+      <p class="alert">JavaScript ist deaktiviert. <a href="/random">Hier direkt einen zufälligen Artikel öffnen.</a></p>
     </noscript>
   </article>
 </div>
@@ -95,15 +95,14 @@
     }
 
     const list = document.createElement('ul');
-    list.className = 'random-recommendations__list';
+    list.className = 'post-list';
 
     recommendations.forEach(post => {
       const item = document.createElement('li');
-      item.className = 'random-recommendations__item';
 
       if (post.url && post.title) {
         const link = document.createElement('a');
-        link.className = 'random-recommendations__link';
+        link.className = 'u-url';
         link.href = post.url;
         link.textContent = post.title;
         item.appendChild(link);
@@ -114,10 +113,11 @@
       }
 
       if (post.summary) {
-        const summary = document.createElement('p');
-        summary.className = 'random-recommendations__summary';
-        summary.textContent = post.summary;
-        item.appendChild(summary);
+        const summaryWrap = document.createElement('p');
+        const summaryText = document.createElement('small');
+        summaryText.textContent = post.summary;
+        summaryWrap.appendChild(summaryText);
+        item.appendChild(summaryWrap);
       }
 
       list.appendChild(item);
@@ -134,7 +134,9 @@
     const progressElement = document.getElementById('countdown-progress');
 
     if (progressElement) {
-      progressElement.style.width = '0%';
+      progressElement.value = 0;
+      progressElement.max = totalSeconds;
+      progressElement.textContent = 'Fortschritt: 0%';
     }
 
     const interval = setInterval(() => {
@@ -145,8 +147,10 @@
 
       if (progressElement) {
         const elapsed = totalSeconds - seconds;
-        const progress = Math.min(Math.max(elapsed / totalSeconds, 0), 1) * 100;
-        progressElement.style.width = `${progress}%`;
+        const clamped = Math.min(Math.max(elapsed, 0), totalSeconds);
+        progressElement.value = clamped;
+        const percent = Math.round((clamped / totalSeconds) * 100);
+        progressElement.textContent = `Fortschritt: ${percent}%`;
       }
 
       if (seconds <= 0) {
