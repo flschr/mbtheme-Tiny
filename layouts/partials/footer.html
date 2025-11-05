@@ -18,10 +18,16 @@
 
   <!-- JavaScript with cache busting -->
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
-  <script src="{{ "/js/utils.js" | relURL }}?v={{ $buildHash }}"></script>
-  <script src="{{ "/js/scroll-to-top.js" | relURL }}?v={{ $buildHash }}"></script>
-  <script src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
-  <script src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
+
+  <!-- Core utilities (defer: non-blocking) -->
+  <script defer src="{{ "/js/utils.js" | relURL }}?v={{ $buildHash }}"></script>
+  <script defer src="{{ "/js/scroll-to-top.js" | relURL }}?v={{ $buildHash }}"></script>
+  <script defer src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
+
+  <!-- Conditional: Copy-code only on pages with code blocks -->
+  {{ if or (findRE "<pre" .Content) (findRE "highlight" .Content) (findRE "```" .RawContent) }}
+  <script defer src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
+  {{ end }}
 
   <!-- Analytics -->
   <script data-goatcounter="https://stats.fischr.org/count"

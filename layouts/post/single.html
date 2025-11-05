@@ -12,7 +12,7 @@
     {{ else }}
     <a href="{{ .Permalink }}" class="post-date u-url"><time class="dt-published" datetime="{{ .Date.Format "2006-01-02 15:04:05 -0700" }}">{{ .Date.Format "Jan 2, 2006" }}</time> ∞</a>{{ if .Title }} <span class="reading-time">· Lesedauer {{ .ReadingTime }} Minuten</span>{{ end }}
     {{ with .Params.audio }}
-      <script type="text/javascript" src="https://micro.blog/narration.js?url={{ . }}"></script>
+      <script async type="text/javascript" src="https://micro.blog/narration.js?url={{ . }}"></script>
     {{ end }}
     {{ end }}
 {{ if .Title }}
@@ -62,7 +62,7 @@
 {{ end }}
 
 {{ if .Site.Params.include_conversation }}
-<script type="text/javascript" src="https://micro.blog/conversation.js?url={{ .Permalink }}"></script>
+<script async type="text/javascript" src="https://micro.blog/conversation.js?url={{ .Permalink }}"></script>
 {{ end }}
 
 {{ if templates.Exists "partials/microhook-after-comments.html" }}

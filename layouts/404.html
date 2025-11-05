@@ -12,5 +12,5 @@
 </div>
 
 {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
-<script src="{{ "/js/404-redirect.js" | relURL }}?v={{ $buildHash }}"></script>
+<script defer src="{{ "/js/404-redirect.js" | relURL }}?v={{ $buildHash }}"></script>
 {{ end }}
