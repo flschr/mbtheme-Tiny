@@ -11,33 +11,6 @@
   </article>
 </div>
 
-<script>
-(function() {
-  const countdownContainer = document.getElementById('countdown-container');
-  const countdownElement = document.getElementById('countdown-value');
-
-  if (!countdownContainer || !countdownElement) {
-    return;
-  }
-
-  // Countdown-Container einblenden
-  countdownContainer.style.display = 'inline';
-
-  let seconds = 6;
-  countdownElement.textContent = seconds;
-
-  const interval = setInterval(() => {
-    seconds -= 1;
-
-    if (seconds <= 0) {
-      countdownElement.textContent = '0';
-      clearInterval(interval);
-      window.location.href = '/random';
-      return;
-    }
-
-    countdownElement.textContent = seconds;
-  }, 1000);
-})();
-</script>
+{{ $buildHash := .Site.Params.buildHash | default now.Unix }}
+<script src="{{ "/js/404-redirect.js" | relURL }}?v={{ $buildHash }}"></script>
 {{ end }}

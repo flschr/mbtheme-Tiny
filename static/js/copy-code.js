@@ -46,8 +46,8 @@
   const canCopy = hasClipboardAPI || hasExecCommand;
 
   // Fallback copy method using execCommand
-  function copyWithFallback(text) {
-    return new Promise(function(resolve, reject) {
+  const copyWithFallback = (text) => {
+    return new Promise((resolve, reject) => {
       const textarea = document.createElement('textarea');
       textarea.value = text;
       textarea.setAttribute('readonly', '');
@@ -78,10 +78,10 @@
         }
       }
     });
-  }
+  };
 
   // Copy text to clipboard
-  function copyText(text) {
+  const copyText = (text) => {
     if (hasClipboardAPI) {
       return navigator.clipboard.writeText(text);
     }
@@ -91,32 +91,32 @@
     }
 
     return Promise.reject(new Error('Copy to clipboard is not supported'));
-  }
+  };
 
   // Show temporary feedback message
-  function showTemporaryMessage(button, message, className) {
+  const showTemporaryMessage = (button, message, className) => {
     button.textContent = message;
     if (className) {
       button.classList.add(className);
     }
 
-    setTimeout(function() {
+    setTimeout(() => {
       button.textContent = MESSAGES.DEFAULT;
       if (className) {
         button.classList.remove(className);
       }
     }, FEEDBACK_DURATION);
-  }
+  };
 
   // Initialize code blocks with copy buttons
-  function initializeCodeBlocks() {
+  const initializeCodeBlocks = () => {
     if (!canCopy) {
       return;
     }
 
     const codeBlocks = document.querySelectorAll(SELECTORS.CODE_BLOCK);
 
-    codeBlocks.forEach(function(codeBlock) {
+    codeBlocks.forEach((codeBlock) => {
       // Skip if already wrapped
       if (codeBlock.parentNode.classList.contains(CLASSES.WRAPPER)) {
         return;
@@ -141,10 +141,10 @@
       // Insert button before code block
       wrapper.insertBefore(copyButton, codeBlock);
     });
-  }
+  };
 
   // Event delegation: Handle all copy button clicks
-  function handleCopyClick(event) {
+  const handleCopyClick = (event) => {
     const button = event.target;
 
     // Check if clicked element is a copy button
@@ -174,16 +174,16 @@
     }
 
     copyText(textToCopy)
-      .then(function() {
+      .then(() => {
         showTemporaryMessage(button, MESSAGES.COPIED, CLASSES.COPIED);
       })
-      .catch(function() {
+      .catch(() => {
         showTemporaryMessage(button, MESSAGES.FAILED, CLASSES.ERROR);
       });
-  }
+  };
 
   // Initialize on DOM ready
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', () => {
     initializeCodeBlocks();
 
     // Event delegation: Single event listener for all copy buttons
