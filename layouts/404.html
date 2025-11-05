@@ -5,171 +5,42 @@
 {{ define "main" }}
 <div class="page">
   <article class="post-content">
-    <p>Very oooopsi! Diese Seite gibt es leider nicht. Versuch gern einen der folgenden Artikel:</p>
+    <p>Very oooopsi! Diese Seite gibt es leider nicht.</p>
 
-    <section id="random-recommendations" class="callout" aria-live="polite">
-      <p>Lädt Empfehlungen …</p>
-    </section>
+    <p>Du wirst in <span id="countdown-value">8</span> Sekunden zu einem zufälligen Qualitätsartikel weitergeleitet.</p>
 
-    <nav aria-label="Alternative Ziele">
-      <ul>
-        <li><a href="/">Zur Startseite</a></li>
-        <li><a href="/archive/">Zum Archiv</a></li>
-        <li><a href="/tags/">Zu den Tags</a></li>
-        <li><a href="/random">Jetzt zufälligen Artikel öffnen</a></li>
-      </ul>
-    </nav>
+    <noscript>
+      <p class="alert">JavaScript ist deaktiviert. Du wirst in Kürze zu einem zufälligen Qualitätsartikel weitergeleitet.</p>
+    </noscript>
 
     <div style="margin: 2em 0;">
       <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900" style="width: 100%; height: auto; border-radius: var(--radius-default);">
     </div>
-
-    <aside class="note" role="status" aria-live="polite">
-      <p>Du wirst in <span id="countdown-value">9</span> Sekunden zu einem zufälligen Artikel weitergeleitet …</p>
-      <progress id="countdown-progress" max="9" value="0">Fortschritt: 0%</progress>
-    </aside>
-
-    <noscript>
-      <p class="alert">JavaScript ist deaktiviert. <a href="/random">Hier direkt einen zufälligen Artikel öffnen.</a></p>
-    </noscript>
   </article>
 </div>
 
-{{/* Generiere Posts-Daten als JSON für JavaScript */}}
-<script type="application/json" id="posts-data">
-{{- $posts := slice -}}
-{{- range .Site.RegularPages -}}
-  {{- if not .Draft -}}
-    {{- $tags := slice -}}
-    {{- range .Params.tags -}}
-      {{- $tags = $tags | append (lower .) -}}
-    {{- end -}}
-    {{- $post := dict "title" .Title "url" .Permalink "date" (.Date.Format "2. Jan 2006") "datetime" (.Date.Format "2006-01-02") "tags" $tags "summary" (.Summary | plainify | truncate 100) -}}
-    {{- $posts = $posts | append $post -}}
-  {{- end -}}
-{{- end -}}
-{{- $posts | jsonify -}}
-</script>
-
 <script>
 (function() {
-  // Lade Posts-Daten
-  const postsDataElement = document.getElementById('posts-data');
-  if (!postsDataElement) {
-    console.error('404 - posts-data element not found!');
+  const countdownElement = document.getElementById('countdown-value');
+  if (!countdownElement) {
     return;
   }
 
-  let postsData = [];
-  try {
-    postsData = JSON.parse(postsDataElement.textContent);
-  } catch (e) {
-    console.error('404 - Error parsing posts data:', e);
-    return;
-  }
+  let seconds = 8;
+  countdownElement.textContent = seconds;
 
-  if (!postsData || postsData.length === 0) {
-    console.warn('404 - No posts data available!');
-    return;
-  }
+  const interval = setInterval(() => {
+    seconds -= 1;
 
-  // Wähle 3 zufällige Posts aus
-  function getRandomPosts(posts, count) {
-    const shuffled = [...posts].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, Math.min(count, posts.length));
-  }
-
-  // Zeige zufällige Empfehlungen an
-  function displayRecommendations() {
-    const recommendations = getRandomPosts(postsData, 3);
-    const recommendationsElement = document.getElementById('random-recommendations');
-
-    if (!recommendationsElement) {
-      console.warn('404 - recommendations element not found!');
+    if (seconds <= 0) {
+      countdownElement.textContent = '0';
+      clearInterval(interval);
+      window.location.href = '/random';
       return;
     }
 
-    if (!recommendations || recommendations.length === 0) {
-      recommendationsElement.textContent = 'Keine Empfehlungen verfügbar';
-      return;
-    }
-
-    const list = document.createElement('ul');
-    list.className = 'post-list';
-
-    recommendations.forEach(post => {
-      const item = document.createElement('li');
-
-      if (post.url && post.title) {
-        const link = document.createElement('a');
-        link.className = 'u-url';
-        link.href = post.url;
-        link.textContent = post.title;
-        item.appendChild(link);
-      } else if (post.title) {
-        const title = document.createElement('span');
-        title.textContent = post.title;
-        item.appendChild(title);
-      }
-
-      if (post.summary) {
-        const summaryWrap = document.createElement('p');
-        const summaryText = document.createElement('small');
-        summaryText.textContent = post.summary;
-        summaryWrap.appendChild(summaryText);
-        item.appendChild(summaryWrap);
-      }
-
-      list.appendChild(item);
-    });
-
-    recommendationsElement.replaceChildren(list);
-  }
-
-  // Countdown und Auto-Redirect
-  function startCountdown() {
-    const totalSeconds = 9;
-    let seconds = totalSeconds;
-    const countdownElement = document.getElementById('countdown-value');
-    const progressElement = document.getElementById('countdown-progress');
-
-    if (progressElement) {
-      progressElement.value = 0;
-      progressElement.max = totalSeconds;
-      progressElement.textContent = 'Fortschritt: 0%';
-    }
-
-    const interval = setInterval(() => {
-      seconds--;
-      if (countdownElement) {
-        countdownElement.textContent = seconds;
-      }
-
-      if (progressElement) {
-        const elapsed = totalSeconds - seconds;
-        const clamped = Math.min(Math.max(elapsed, 0), totalSeconds);
-        progressElement.value = clamped;
-        const percent = Math.round((clamped / totalSeconds) * 100);
-        progressElement.textContent = `Fortschritt: ${percent}%`;
-      }
-
-      if (seconds <= 0) {
-        clearInterval(interval);
-        window.location.href = '/random';
-      }
-    }, 1000);
-  }
-
-  // Führe aus, wenn DOM bereit ist
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      displayRecommendations();
-      startCountdown();
-    });
-  } else {
-    displayRecommendations();
-    startCountdown();
-  }
+    countdownElement.textContent = seconds;
+  }, 1000);
 })();
 </script>
 {{ end }}
