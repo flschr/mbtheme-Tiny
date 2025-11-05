@@ -200,6 +200,15 @@ img.profile_photo {
 	border-radius: var(--radius-profile);
 }
 
+.noscript-notice {
+	margin-top: 1em;
+	padding: 0.5em 0.75em;
+	background: var(--note);
+	border-left: 3px solid var(--note-border);
+	font-size: 0.9em;
+	color: var(--accent2);
+}
+
 
 /* ==========================================================================
    LAYOUT: NAVIGATION
