@@ -64,6 +64,14 @@
 
   <!-- Simple noscript message -->
   <noscript>
-    <p class="noscript-notice">Hinweis: Die Suche auf dieser Seite benötigt JavaScript.</p>
+    {{- $articleCount := len .Site.RegularPages -}}
+    {{- $oldestDate := .Site.LastChange -}}
+    {{- range .Site.RegularPages -}}
+      {{- if .Date.Before $oldestDate -}}
+        {{- $oldestDate = .Date -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $years := div (sub now.Unix $oldestDate.Unix) 31536000 -}}
+    <p class="noscript-notice">{{ $years }} Jahre, {{ $articleCount }} Artikel – zum Suchen bitte JavaScript aktivieren.</p>
   </noscript>
 </header>
