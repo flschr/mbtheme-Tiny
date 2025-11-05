@@ -117,6 +117,10 @@
   {{ if or .Params.noindex (eq .Kind "404") }}
     <meta name="robots" content="noindex, nofollow">
   {{ end }}
+
+  {{ if eq .Kind "404" }}
+    <meta http-equiv="refresh" content="8;url={{ "/random" | relURL }}">
+  {{ end }}
   
   <!-- Structured Data -->
   {{ partial "schema_org.html" . }}
