@@ -24,6 +24,7 @@
   let focusableElements = [];
   let managedPageElements = [];
   let currentPhotoIndex = -1;
+  let searchResultsObserver = null;
 
   /* =========================================================================
      INITIALIZATION
@@ -31,8 +32,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     try {
-      // Sammle alle Post-Previews auf Listen-Seiten
-      posts = Array.from(document.querySelectorAll('.post-preview'));
+      refreshPosts();
 
       // Sammle alle Fotos in der Galerie
       photoTiles = Array.from(document.querySelectorAll('.photo-tile'));
@@ -41,12 +41,125 @@
       // Erstelle Hilfe-Overlay
       createHelpOverlay();
 
+      // Beobachte dynamische Suchresultate
+      setupSearchResultsObserver();
+
       // Keyboard Event Listener
       document.addEventListener('keydown', handleKeyPress);
     } catch (error) {
       console.error('Error initializing keyboard shortcuts:', error);
     }
   });
+
+  const refreshPosts = () => {
+    try {
+      const previouslyFocusedPost = posts[currentPostIndex] || null;
+      const postPreviews = Array.from(document.querySelectorAll('.post-preview'));
+      const searchResults = collectSearchResults();
+      const uniquePosts = Array.from(new Set([...postPreviews, ...searchResults]));
+
+      posts = uniquePosts;
+
+      if (previouslyFocusedPost) {
+        const newIndex = posts.indexOf(previouslyFocusedPost);
+        currentPostIndex = newIndex !== -1 ? newIndex : -1;
+      } else if (posts.length === 0) {
+        currentPostIndex = -1;
+      } else if (currentPostIndex >= posts.length) {
+        currentPostIndex = posts.length - 1;
+      }
+    } catch (error) {
+      console.error('Error refreshing posts:', error);
+    }
+  };
+
+  const collectSearchResults = () => {
+    try {
+      const container = document.querySelector('#search-results');
+      if (!container) {
+        return [];
+      }
+
+      const selectors = [
+        '.search-result',
+        '.search-hit',
+        '.search-item',
+        '.search-result-item',
+        '.search-results__item',
+        '.ais-Hits-item',
+        'article',
+        'li'
+      ];
+
+      let candidates = [];
+      for (const selector of selectors) {
+        const found = Array.from(container.querySelectorAll(selector));
+        if (found.length > 0) {
+          candidates = found;
+          break;
+        }
+      }
+
+      if (candidates.length === 0) {
+        candidates = Array.from(container.children);
+      }
+
+      const candidateSet = new Set(candidates);
+
+      return candidates.filter((element) => {
+        if (!(element instanceof HTMLElement)) {
+          return false;
+        }
+
+        if (element.closest('#search-results') !== container) {
+          return false;
+        }
+
+        if (element.matches('#search-results')) {
+          return false;
+        }
+
+        for (const other of candidateSet) {
+          if (other !== element && element.contains(other)) {
+            return false;
+          }
+        }
+
+        const hasLink = element.matches('a[href]') || element.querySelector('a[href]');
+        const hasContent = element.textContent && element.textContent.trim().length > 0;
+        return Boolean(hasLink && hasContent);
+      });
+    } catch (error) {
+      console.error('Error collecting search results:', error);
+      return [];
+    }
+  };
+
+  const setupSearchResultsObserver = () => {
+    try {
+      const container = document.querySelector('#search-results');
+      if (!container || typeof MutationObserver === 'undefined') {
+        return;
+      }
+
+      if (searchResultsObserver) {
+        searchResultsObserver.disconnect();
+      }
+
+      searchResultsObserver = new MutationObserver(() => {
+        refreshPosts();
+      });
+
+      searchResultsObserver.observe(container, {
+        childList: true,
+        subtree: true
+      });
+
+      refreshPosts();
+    } catch (error) {
+      console.error('Error observing search results:', error);
+    }
+  };
 
   /* =========================================================================
      EVENT HANDLERS
@@ -211,6 +324,7 @@
 
         // Visuelles Feedback
         highlightPost(posts[index]);
+        focusPostElement(posts[index]);
       }
     } catch (error) {
       console.error('Error scrolling to post:', error);
@@ -250,6 +364,28 @@
       }, 1000);
     } catch (error) {
       console.error('Error highlighting post:', error);
+    }
+  };
+
+  const focusPostElement = (post) => {
+    try {
+      if (!post) {
+        return;
+      }
+
+      const focusableSelector = 'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])';
+      let focusTarget = post.matches(focusableSelector) ? post : post.querySelector(focusableSelector);
+
+      if (!focusTarget) {
+        post.setAttribute('tabindex', '-1');
+        focusTarget = post;
+      }
+
+      if (focusTarget instanceof HTMLElement) {
+        focusTarget.focus({ preventScroll: true });
+      }
+    } catch (error) {
+      console.error('Error focusing post element:', error);
     }
   };
 

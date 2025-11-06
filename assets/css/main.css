@@ -781,10 +781,17 @@ nav a:focus-visible {
 
 /* Keyboard-fokussierter Post (temporäres Highlight) */
 .post-preview.keyboard-focused {
-	outline: 3px solid var(--link);
-	outline-offset: 4px;
-	border-radius: var(--radius-default);
-	transition: outline 0.2s ease;
+        outline: 3px solid var(--link);
+        outline-offset: 4px;
+        border-radius: var(--radius-default);
+        transition: outline 0.2s ease;
+}
+
+#search-results .keyboard-focused {
+        outline: 3px solid var(--link);
+        outline-offset: 4px;
+        border-radius: var(--radius-default);
+        transition: outline 0.2s ease;
 }
 
 /* Hilfe-Overlay für Keyboard Shortcuts */
