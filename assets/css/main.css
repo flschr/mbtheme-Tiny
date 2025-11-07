@@ -981,10 +981,12 @@ kbd {
 }
 
 .scroll-btn__icon {
-        font-size: 1.4rem;
+        width: 1.4rem;
+        height: 1.4rem;
         line-height: 1;
         position: relative;
         z-index: 1;
+        display: block;
 }
 
 @media (prefers-color-scheme: dark) {
