@@ -26,9 +26,11 @@
     {{ $mainCss := resources.Get "css/main.css" }}
     {{ if $mainCss }}
       {{ $mainCss = $mainCss | minify | fingerprint "sha256" }}
-      <link rel="stylesheet" href="{{ $mainCss.RelPermalink }}" integrity="{{ $mainCss.Data.Integrity }}" crossorigin="anonymous">
+      <link rel="preload" href="{{ $mainCss.RelPermalink }}" as="style" fetchpriority="high">
+      <link rel="stylesheet" href="{{ $mainCss.RelPermalink }}" integrity="{{ $mainCss.Data.Integrity }}">
     {{ else }}
       <!-- Fallback ohne Resource Pipeline -->
+      <link rel="preload" href="{{ "css/main.css" | relURL }}?v={{ $buildHash }}" as="style" fetchpriority="high">
       <link rel="stylesheet" href="{{ "css/main.css" | relURL }}?v={{ $buildHash }}">
     {{ end }}
   {{ end }}
