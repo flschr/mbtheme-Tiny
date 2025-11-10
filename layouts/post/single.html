@@ -62,7 +62,7 @@
 {{ end }}
 
 {{ if .Site.Params.include_conversation }}
-<script async type="text/javascript" src="https://micro.blog/conversation.js?url={{ .Permalink }}"></script>
+<script type="text/javascript" src="https://micro.blog/conversation.js?url={{ .Permalink }}"></script>
 {{ end }}
 
 {{ if templates.Exists "partials/microhook-after-comments.html" }}
