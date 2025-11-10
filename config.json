@@ -25,6 +25,7 @@
   },
 
   "params": {
+    "include_conversation": true,
     "social": [
       {
         "name": "Micro.blog",
