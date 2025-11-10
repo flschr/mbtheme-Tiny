@@ -30,7 +30,9 @@
   {{ end }}
 
   <!-- YouTube Embeds -->
+  {{ if templates.Exists "partials/lite-youtube-footer.html" }}
   {{ partial "lite-youtube-footer.html" . }}
+  {{ end }}
 
   <!-- Analytics -->
   <script data-goatcounter="https://stats.fischr.org/count"

@@ -135,8 +135,10 @@
   <!-- Micro.blog Head (enthält Favicon, Feeds, IndieWeb Links) -->
   {{ partial "microblog_head.html" . }}
 
-<!-- YouTube Embeds -->  
+  <!-- YouTube Embeds -->
+  {{ if templates.Exists "partials/lite-youtube-head.html" }}
   {{ partial "lite-youtube-head.html" . }}
+  {{ end }}
   
   <!-- Custom Hooks -->
   {{ if templates.Exists "partials/microhook-head.html" }}
