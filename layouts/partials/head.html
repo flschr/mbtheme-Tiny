@@ -135,10 +135,9 @@
   <!-- Micro.blog Head (enthält Favicon, Feeds, IndieWeb Links) -->
   {{ partial "microblog_head.html" . }}
 
-  <!-- YouTube Embeds -->
-  {{ if templates.Exists "partials/lite-youtube-head.html" }}
-  {{ partial "lite-youtube-head.html" . }}
-  {{ end }}
+  <!-- Click-2-Load -->
+  {{ partial "embed-consent-config.html" . }}
+  <link rel="stylesheet" href="{{ "css/embed-consent.css" | relURL }}">
   
   <!-- Custom Hooks -->
   {{ if templates.Exists "partials/microhook-head.html" }}

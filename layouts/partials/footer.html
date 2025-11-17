@@ -29,10 +29,8 @@
   <script defer src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
   {{ end }}
 
-  <!-- YouTube Embeds -->
-  {{ if templates.Exists "partials/lite-youtube-footer.html" }}
-  {{ partial "lite-youtube-footer.html" . }}
-  {{ end }}
+  <!-- Click-2-Load -->
+  <script src="{{ "js/embed-consent.js" | relURL }}"></script>
 
   <!-- Analytics -->
   <script data-goatcounter="https://stats.fischr.org/count"
