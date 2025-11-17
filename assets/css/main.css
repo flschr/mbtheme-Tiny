@@ -628,8 +628,11 @@ video {
 }
 
 /* iFrame */
-iframe {
-	max-width: 100%;
+article iframe,
+.e-content iframe {
+    display: block;
+    margin: 1.5em 0;
+    border-radius: var(--radius-default);
 }
 
 
