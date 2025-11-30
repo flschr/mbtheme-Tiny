@@ -118,14 +118,14 @@
 </script>
 {{- end -}}
 
-{{/* Recipe Schema - aktiviert durch Tag/Category "rezept" oder "recipe" ODER .Params.recipe */}}
+{{/* Recipe Schema - aktiviert durch Tag/Category "rezeptvomchef" ODER .Params.recipe */}}
 {{- $isRecipe := false -}}
 {{- if .Params.recipe }}{{ $isRecipe = true }}{{ end -}}
 {{- range $term := .GetTerms "tags" }}
-  {{- if in (slice "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
+  {{- if in (slice "rezeptvomchef" "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
 {{- end -}}
 {{- range $term := .GetTerms "categories" }}
-  {{- if in (slice "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
+  {{- if in (slice "rezeptvomchef" "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
 {{- end -}}
 
 {{- if $isRecipe -}}
@@ -213,10 +213,11 @@
   {{- if in (slice "review" "rezension" "bewertung" "kritik") (lower $term.LinkTitle) }}{{ $isReview = true }}{{ end -}}
 {{- end -}}
 
-{{/* Automatische Sternchen-Erkennung im Content (⭐⭐⭐⭐⭐) */}}
+{{/* Automatische Sternchen-Erkennung im Content (⭐⭐⭐⭐⭐ oder ★★★★★) */}}
 {{- if not $ratingValue -}}
   {{- $content := .Content | plainify -}}
-  {{- $stars := findRE "⭐+" $content 1 -}}
+  {{/* Suche nach ⭐ (U+2B50) oder ★ (U+2605) */}}
+  {{- $stars := findRE "[⭐★]+" $content 1 -}}
   {{- if $stars -}}
     {{- $starCount := len (index $stars 0) -}}
     {{- if gt $starCount 0 -}}
@@ -233,6 +234,7 @@
   {{- if in (slice "serie" "tv" "fernsehen") $tag }}{{ $reviewItemType = "TVSeries" }}{{ end -}}
   {{- if in (slice "buch" "book" "lesen") $tag }}{{ $reviewItemType = "Book" }}{{ end -}}
   {{- if in (slice "restaurant" "essen" "pizza" "cafe") $tag }}{{ $reviewItemType = "Restaurant" }}{{ end -}}
+  {{- if in (slice "laden" "shop" "geschäft" "store") $tag }}{{ $reviewItemType = "Store" }}{{ end -}}
   {{- if in (slice "ort" "place" "location") $tag }}{{ $reviewItemType = "Place" }}{{ end -}}
 {{- end -}}
 
@@ -278,7 +280,7 @@
     ,
     "image": {{ printf "%q" . }}
     {{- end }}
-    {{- if or (eq .Params.review.itemType "Place") (eq $reviewItemType "Place") (eq $reviewItemType "Restaurant") }}
+    {{- if or (eq .Params.review.itemType "Place") (eq $reviewItemType "Place") (eq $reviewItemType "Restaurant") (eq $reviewItemType "Store") }}
     {{- with .Params.review.address -}}
     ,
     "address": {

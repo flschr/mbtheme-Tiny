@@ -12,10 +12,9 @@ Das Theme erkennt automatisch, welche Art von Content du postest, basierend auf:
 ## 1. Rezepte (Recipe Schema)
 
 **So aktivierst du es:**
-Füge einen dieser Tags zu deinem Post hinzu:
-- `rezept`
-- `recipe`
-- `kochen`
+Füge diesen Tag zu deinem Post hinzu:
+- `rezeptvomchef` (Haupt-Tag)
+- Alternative: `rezept`, `recipe`, `kochen`
 
 **Beispiel-Post:**
 ```
@@ -32,7 +31,7 @@ Zubereitung:
 2. Sahne, Essig und Gewürze vermischen
 3. Über die Gurken geben und ziehen lassen
 
-#rezept #sommer #schnell
+#rezeptvomchef #sommer #schnell
 ```
 
 Das Theme generiert automatisch Recipe Schema mit:
@@ -52,14 +51,19 @@ Füge einfach Sternchen zu deinem Post hinzu:
 ```
 Plur1bus - Staffel 1
 
-⭐⭐⭐⭐⭐
+★★★★★
 
 Absolut sehenswert! Die Serie überzeugt durch...
 
 #serie #tv #review
 ```
 
-Das Theme zählt die Sternchen (⭐) und generiert automatisch ein Review Schema mit der entsprechenden Bewertung.
+Das Theme zählt die Sternchen automatisch und generiert ein Review Schema mit der entsprechenden Bewertung.
+
+**Beide Stern-Typen funktionieren:**
+- ⭐⭐⭐⭐⭐ (gefüllte Sterne)
+- ★★★★★ (schwarze Sterne)
+- ★★★★☆ (gemischt - zählt nur die gefüllten ★)
 
 ### Option B: Review-Tag
 Oder nutze einen dieser Tags:
@@ -71,19 +75,20 @@ Oder nutze einen dieser Tags:
 **Automatische Typ-Erkennung:**
 Das Theme erkennt automatisch, WAS du bewertest, basierend auf deinen Tags:
 
-| Deine Tags | Review-Typ |
-|------------|-----------|
-| `film`, `movie`, `kino` | Movie |
-| `serie`, `tv`, `fernsehen` | TVSeries |
-| `buch`, `book`, `lesen` | Book |
-| `restaurant`, `essen`, `pizza`, `cafe` | Restaurant |
-| `ort`, `place`, `location` | Place |
+| Deine Tags | Review-Typ | Beispiel |
+|------------|-----------|----------|
+| `film`, `movie`, `kino` | Movie | Kino-Filme |
+| `serie`, `tv`, `fernsehen` | TVSeries | TV-Serien |
+| `buch`, `book`, `lesen` | Book | Bücher |
+| `restaurant`, `essen`, `pizza`, `cafe` | Restaurant | Restaurants, Cafés |
+| `laden`, `shop`, `geschäft`, `store` | Store | Läden, Geschäfte |
+| `ort`, `place`, `location` | Place | Allgemeine Orte |
 
 **Beispiel: Restaurant-Review**
 ```
 Denis Pizza Place
 
-⭐⭐⭐⭐⭐
+★★★★★
 
 Beste Pizza in Berlin! Der Teig ist perfekt...
 
@@ -91,6 +96,19 @@ Beste Pizza in Berlin! Der Teig ist perfekt...
 ```
 
 → Wird automatisch als Restaurant-Review mit 5 Sternen erkannt!
+
+**Beispiel: Laden/Shop-Review**
+```
+Buchladen am Markt
+
+★★★★☆
+
+Tolle Auswahl, freundliche Beratung!
+
+#laden #bücher #review
+```
+
+→ Wird automatisch als Store-Review mit 4 Sternen erkannt!
 
 **Beispiel: Serie-Review**
 ```
@@ -208,7 +226,7 @@ Tolle Pizza, super Ambiente!
 
 | Feature | Tags |
 |---------|------|
-| Rezepte | `rezept`, `recipe`, `kochen` |
+| Rezepte | `rezeptvomchef`, `rezept`, `recipe`, `kochen` |
 | Reviews | `review`, `rezension`, `bewertung`, `kritik` |
 | Videos | `video`, `vlog` |
 | CC-Lizenz | `cc`, `creative-commons` |
@@ -220,11 +238,14 @@ Tolle Pizza, super Ambiente!
 | Serie | `serie`, `tv`, `fernsehen` |
 | Buch | `buch`, `book`, `lesen` |
 | Restaurant | `restaurant`, `essen`, `pizza`, `cafe` |
+| Laden/Shop | `laden`, `shop`, `geschäft`, `store` |
 | Ort | `ort`, `place`, `location` |
 
 ## Tipps
 
-1. **Sternchen kopieren:** ⭐ (kopiere dieses Emoji für Bewertungen)
+1. **Sternchen kopieren:**
+   - ⭐ (gefüllter Stern) oder
+   - ★ (schwarzer Stern) - beide funktionieren!
 2. **Tags in Micro.blog:** Schreibe Tags am Ende mit `#tag`
 3. **Geduld:** Google braucht Tage/Wochen um strukturierte Daten zu indexieren
 4. **Nicht für Klicks optimieren:** Sieh es als Experiment, nicht als SEO-Hack
