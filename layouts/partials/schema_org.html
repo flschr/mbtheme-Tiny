@@ -118,8 +118,17 @@
 </script>
 {{- end -}}
 
-{{/* Recipe Schema (wenn .Params.recipe gesetzt) */}}
-{{- if .Params.recipe -}}
+{{/* Recipe Schema - aktiviert durch Tag/Category "rezept" oder "recipe" ODER .Params.recipe */}}
+{{- $isRecipe := false -}}
+{{- if .Params.recipe }}{{ $isRecipe = true }}{{ end -}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
+{{- end -}}
+{{- range $term := .GetTerms "categories" }}
+  {{- if in (slice "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
+{{- end -}}
+
+{{- if $isRecipe -}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -181,8 +190,53 @@
 </script>
 {{- end -}}
 
-{{/* Review Schema (wenn .Params.rating oder .Params.review gesetzt) */}}
-{{- if or .Params.rating .Params.review -}}
+{{/* Review Schema - aktiviert durch Tag "review"/"rezension" ODER .Params.rating ODER Sternchen im Content */}}
+{{- $isReview := false -}}
+{{- $ratingValue := 0.0 -}}
+{{- $reviewItemType := "Thing" -}}
+
+{{/* Prüfe auf explizites Rating in Params */}}
+{{- if .Params.rating }}
+  {{- $isReview = true -}}
+  {{- if reflect.IsMap .Params.rating }}
+    {{- $ratingValue = .Params.rating.value -}}
+  {{- else }}
+    {{- $ratingValue = .Params.rating -}}
+  {{- end }}
+{{- end -}}
+
+{{/* Prüfe auf review Tag/Category */}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "review" "rezension" "bewertung" "kritik") (lower $term.LinkTitle) }}{{ $isReview = true }}{{ end -}}
+{{- end -}}
+{{- range $term := .GetTerms "categories" }}
+  {{- if in (slice "review" "rezension" "bewertung" "kritik") (lower $term.LinkTitle) }}{{ $isReview = true }}{{ end -}}
+{{- end -}}
+
+{{/* Automatische Sternchen-Erkennung im Content (⭐⭐⭐⭐⭐) */}}
+{{- if not $ratingValue -}}
+  {{- $content := .Content | plainify -}}
+  {{- $stars := findRE "⭐+" $content 1 -}}
+  {{- if $stars -}}
+    {{- $starCount := len (index $stars 0) -}}
+    {{- if gt $starCount 0 -}}
+      {{- $isReview = true -}}
+      {{- $ratingValue = $starCount -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Bestimme Review-Typ aus Tags */}}
+{{- range $term := .GetTerms "tags" }}
+  {{- $tag := lower $term.LinkTitle -}}
+  {{- if in (slice "film" "movie" "kino") $tag }}{{ $reviewItemType = "Movie" }}{{ end -}}
+  {{- if in (slice "serie" "tv" "fernsehen") $tag }}{{ $reviewItemType = "TVSeries" }}{{ end -}}
+  {{- if in (slice "buch" "book" "lesen") $tag }}{{ $reviewItemType = "Book" }}{{ end -}}
+  {{- if in (slice "restaurant" "essen" "pizza" "cafe") $tag }}{{ $reviewItemType = "Restaurant" }}{{ end -}}
+  {{- if in (slice "ort" "place" "location") $tag }}{{ $reviewItemType = "Place" }}{{ end -}}
+{{- end -}}
+
+{{- if and $isReview (gt $ratingValue 0) -}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -192,14 +246,14 @@
   {{- end }}
   "reviewRating": {
     "@type": "Rating",
-    "ratingValue": {{ .Params.rating.value | default .Params.rating }},
-    {{- with .Params.rating.bestRating }}
-    "bestRating": {{ . }},
+    "ratingValue": {{ $ratingValue }},
+    {{- if .Params.rating.bestRating }}
+    "bestRating": {{ .Params.rating.bestRating }},
     {{- else }}
     "bestRating": 5,
     {{- end }}
-    {{- with .Params.rating.worstRating }}
-    "worstRating": {{ . }}
+    {{- if .Params.rating.worstRating }}
+    "worstRating": {{ .Params.rating.worstRating }}
     {{- else }}
     "worstRating": 1
     {{- end }}
@@ -217,14 +271,14 @@
     {{- if .Params.review.itemType }}
     "@type": {{ printf "%q" .Params.review.itemType }},
     {{- else }}
-    "@type": "Thing",
+    "@type": {{ printf "%q" $reviewItemType }},
     {{- end }}
     "name": {{ printf "%q" (.Params.review.itemName | default .Title | plainify) }}
     {{- with .Params.review.itemImage -}}
     ,
     "image": {{ printf "%q" . }}
     {{- end }}
-    {{- if eq .Params.review.itemType "Place" }}
+    {{- if or (eq .Params.review.itemType "Place") (eq $reviewItemType "Place") (eq $reviewItemType "Restaurant") }}
     {{- with .Params.review.address -}}
     ,
     "address": {
@@ -241,8 +295,17 @@
 </script>
 {{- end -}}
 
-{{/* VideoObject Schema (wenn .Params.video gesetzt) */}}
-{{- if .Params.video -}}
+{{/* VideoObject Schema - aktiviert durch Tag "video" ODER .Params.video */}}
+{{- $isVideo := false -}}
+{{- if .Params.video }}{{ $isVideo = true }}{{ end -}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "video" "film" "vlog") (lower $term.LinkTitle) }}{{ $isVideo = true }}{{ end -}}
+{{- end -}}
+{{- range $term := .GetTerms "categories" }}
+  {{- if in (slice "video" "videos") (lower $term.LinkTitle) }}{{ $isVideo = true }}{{ end -}}
+{{- end -}}
+
+{{- if $isVideo -}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -281,15 +344,50 @@
 </script>
 {{- end -}}
 
-{{/* ImageObject with Creative Commons License */}}
-{{- if .Params.license -}}
+{{/* ImageObject with Creative Commons License - aktiviert durch .Site.Params.license ODER .Params.license ODER Tag "cc" */}}
+{{- $hasLicense := false -}}
+{{- $licenseURL := "" -}}
+{{- $licenseName := "CC BY-SA 4.0" -}}
+
+{{/* Prüfe Site-weite Lizenz-Einstellung */}}
+{{- if .Site.Params.license }}
+  {{- $hasLicense = true -}}
+  {{- if reflect.IsMap .Site.Params.license }}
+    {{- $licenseURL = .Site.Params.license.url | default "https://creativecommons.org/licenses/by-sa/4.0/" -}}
+    {{- $licenseName = .Site.Params.license.name | default "CC BY-SA 4.0" -}}
+  {{- else }}
+    {{- $licenseURL = .Site.Params.license -}}
+  {{- end }}
+{{- end -}}
+
+{{/* Post-spezifische Lizenz überschreibt Site-Default */}}
+{{- if .Params.license }}
+  {{- $hasLicense = true -}}
+  {{- if reflect.IsMap .Params.license }}
+    {{- $licenseURL = .Params.license.url | default "https://creativecommons.org/licenses/by-sa/4.0/" -}}
+    {{- $licenseName = .Params.license.name | default "CC BY-SA 4.0" -}}
+  {{- else }}
+    {{- $licenseURL = .Params.license -}}
+  {{- end }}
+{{- end -}}
+
+{{/* Aktivierung durch "cc" Tag */}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "cc" "creative-commons" "creativecommons") (lower $term.LinkTitle) }}
+    {{- $hasLicense = true -}}
+    {{- if not $licenseURL }}{{ $licenseURL = "https://creativecommons.org/licenses/by-sa/4.0/" }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Generiere ImageObject für alle Fotos wenn Lizenz aktiv */}}
+{{- if and $hasLicense .Params.photos -}}
 {{- range $index, $photo := .Params.photos }}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "ImageObject",
   "contentUrl": {{ printf "%q" $photo }},
-  "license": {{ printf "%q" ($.Params.license.url | default "https://creativecommons.org/licenses/by-sa/4.0/") }},
+  "license": {{ printf "%q" $licenseURL }},
   "acquireLicensePage": {{ printf "%q" $.Permalink }},
   "creator": {
     "@type": "Person",
@@ -297,7 +395,7 @@
     "url": {{ printf "%q" $authorURLAbs }}
   },
   "creditText": {{ printf "%q" ($.Params.license.attribution | default $authorName) }},
-  "copyrightNotice": {{ printf "%q" ($.Params.license.notice | default (printf "© %s - %s" $authorName ($.Params.license.name | default "CC BY-SA 4.0"))) }}
+  "copyrightNotice": {{ printf "%q" ($.Params.license.notice | default (printf "© %s - %s" $authorName $licenseName)) }}
 }
 </script>
 {{- end }}
