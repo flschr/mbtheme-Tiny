@@ -1,155 +1,116 @@
-# Search Engine Experimentation für Micro.blog
+# Search Engine Experimentation - Micro.blog Anleitung
 
-Diese Anleitung erklärt, wie du die erweiterten Schema.org Features **mit Micro.blog** nutzt, wo du keinen direkten Zugriff auf Frontmatter hast.
+Einfache Anleitung für strukturierte Daten in Micro.blog.
 
-## Wie es funktioniert
+## Was du brauchst
 
-Das Theme erkennt automatisch, welche Art von Content du postest, basierend auf:
-1. **Tags** die du in Micro.blog setzt
-2. **Content-Analyse** (z.B. Sternchen im Text)
-3. **Globale Einstellungen** in deiner config.json
+Nur **Tags** in deinen Posts. Keine komplizierten Einstellungen.
 
-## 1. Rezepte (Recipe Schema)
+---
 
-**So aktivierst du es:**
-Füge diesen Tag zu deinem Post hinzu:
-- `rezeptvomchef` (Haupt-Tag)
-- Alternative: `rezept`, `recipe`, `kochen`
+## 1. 🍳 Rezepte
 
-**Beispiel-Post:**
+**Tag:** `#rezeptvomchef`
+
+**Beispiel:**
 ```
-Gurkensalat nach Omas Rezept 🥒
+Omas Gurkensalat
 
 Zutaten:
-- 2 große Gurken
+- 2 Gurken
 - 200ml Sahne
-- 2 EL Essig
-- Salz und Pfeffer
+- Essig, Salz, Pfeffer
 
 Zubereitung:
-1. Gurken schälen und in dünne Scheiben schneiden
-2. Sahne, Essig und Gewürze vermischen
-3. Über die Gurken geben und ziehen lassen
+1. Gurken schneiden
+2. Mit Sahne vermischen
+3. Ziehen lassen
 
-#rezeptvomchef #sommer #schnell
+#rezeptvomchef
 ```
 
-Das Theme generiert automatisch Recipe Schema mit:
-- Titel als Rezeptname
-- Erstes Bild als Recipe-Bild
-- Summary als Beschreibung
+→ Google kann es im Rezept-Karussell anzeigen
 
-**Hinweis:** Für detaillierte Rezepte (mit Zeiten, Portionen etc.) brauchst du Frontmatter - aber die Basic-Version funktioniert nur mit dem Tag!
+---
 
-## 2. Bewertungen mit Sternen (Review Schema)
+## 2. ⭐ Bewertungen (Reviews)
 
-**So aktivierst du es:**
+**Was du schreibst:**
+- Sternchen: ★★★★★ oder ⭐⭐⭐⭐⭐
+- Tag: `#review`
+- Typ-Tag: `#film`, `#serie`, `#buch` oder `#ort`
 
-### Option A: Automatische Sternchen-Erkennung
-Füge einfach Sternchen zu deinem Post hinzu:
+**Sternchen zum Kopieren:**
+- ★ (schwarzer Stern)
+- ⭐ (gefüllter Stern)
+
+### Beispiel: Film
 
 ```
-Plur1bus - Staffel 1
+The Matrix
 
 ★★★★★
 
-Absolut sehenswert! Die Serie überzeugt durch...
+Legendärer Film!
 
-#serie #tv #review
+#film #review
 ```
 
-Das Theme zählt die Sternchen automatisch und generiert ein Review Schema mit der entsprechenden Bewertung.
+### Beispiel: Serie
 
-**Beide Stern-Typen funktionieren:**
-- ⭐⭐⭐⭐⭐ (gefüllte Sterne)
-- ★★★★★ (schwarze Sterne)
-- ★★★★☆ (gemischt - zählt nur die gefüllten ★)
-
-### Option B: Review-Tag
-Oder nutze einen dieser Tags:
-- `review`
-- `rezension`
-- `bewertung`
-- `kritik`
-
-**Automatische Typ-Erkennung:**
-Das Theme erkennt automatisch, WAS du bewertest, basierend auf deinen Tags:
-
-| Deine Tags | Review-Typ | Beispiel |
-|------------|-----------|----------|
-| `film`, `movie`, `kino` | Movie | Kino-Filme |
-| `serie`, `tv`, `fernsehen` | TVSeries | TV-Serien |
-| `buch`, `book`, `lesen` | Book | Bücher |
-| `restaurant`, `essen`, `pizza`, `cafe` | Restaurant | Restaurants, Cafés |
-| `laden`, `shop`, `geschäft`, `store` | Store | Läden, Geschäfte |
-| `ort`, `place`, `location` | Place | Allgemeine Orte |
-
-**Beispiel: Restaurant-Review**
 ```
-Denis Pizza Place
+The Mandalorian
+
+⭐⭐⭐⭐
+
+Tolle Serie!
+
+#serie #review
+```
+
+### Beispiel: Buch
+
+```
+Der Hobbit
 
 ★★★★★
 
-Beste Pizza in Berlin! Der Teig ist perfekt...
+Klassiker!
 
-#restaurant #pizza #berlin #review
+#buch #review
 ```
 
-→ Wird automatisch als Restaurant-Review mit 5 Sternen erkannt!
+### Beispiel: Restaurant/Laden/Ort
 
-**Beispiel: Laden/Shop-Review**
+```
+Pizza Luigi
+
+★★★★★
+
+Beste Pizza in Berlin!
+
+#restaurant #ort #review
+```
+
 ```
 Buchladen am Markt
 
 ★★★★☆
 
-Tolle Auswahl, freundliche Beratung!
+Große Auswahl!
 
-#laden #bücher #review
+#laden #ort #review
 ```
 
-→ Wird automatisch als Store-Review mit 4 Sternen erkannt!
+**Hinweis:** Bei Orten ist egal ob Restaurant, Laden, Park, etc. - nutze einfach `#ort` oder spezifischer `#restaurant` / `#laden`.
 
-**Beispiel: Serie-Review**
-```
-The Mandalorian Staffel 3
+---
 
-⭐⭐⭐⭐
+## 3. 📷 CC-Lizenz für Fotos
 
-Starker Abschluss der Trilogie...
+**Option A: Global für alle Fotos**
 
-#serie #tv #starwars #review
-```
-
-→ Wird automatisch als TVSeries-Review mit 4 Sternen erkannt!
-
-## 3. Videos (VideoObject Schema)
-
-**So aktivierst du es:**
-Füge einen dieser Tags hinzu:
-- `video`
-- `vlog`
-
-**Beispiel:**
-```
-Meine neue Kamera im Test
-
-Hier zeige ich euch meine neue Kamera...
-
-[Link zum Video oder eingebettetes Video]
-
-#video #kamera #test
-```
-
-**Hinweis:** Google indexiert Videos nur, wenn sie der Hauptinhalt der Seite sind (wie bei YouTube).
-
-## 4. Creative Commons Lizenzen für Bilder
-
-**So aktivierst du es:**
-
-### Option A: Global für alle Bilder (empfohlen)
-Füge in deiner `config.json` hinzu:
-
+In deiner Micro.blog Config:
 ```json
 {
   "params": {
@@ -161,106 +122,71 @@ Füge in deiner `config.json` hinzu:
 }
 ```
 
-Jetzt werden ALLE Bilder in Posts mit dieser Lizenz markiert!
+**Option B: Pro Post**
 
-### Option B: Per Post mit Tag
-Füge den Tag `cc` oder `creative-commons` zu Posts hinzu, deren Bilder lizenziert sein sollen:
-
+Füge den Tag `#cc` hinzu:
 ```
-Schöner Sonnenuntergang am Strand
+Sonnenuntergang am Strand
 
 [Foto]
 
-Diese Fotos stehen unter Creative Commons Lizenz.
-
-#fotografie #strand #cc
+#fotografie #cc
 ```
 
-## Kombinationen
+→ Google erkennt deine Bilder als CC-lizenziert
 
-Du kannst mehrere Features kombinieren:
+---
 
-**Beispiel: Rezept mit Foto und CC-Lizenz**
-```
-Omas Gurkensalat 🥒
+## Tag-Übersicht
 
-[Foto vom fertigen Salat]
+| Was | Tag | Beispiel |
+|-----|-----|----------|
+| Rezept | `#rezeptvomchef` | Gurkensalat |
+| Film-Review | `#film #review` + ★★★★★ | The Matrix |
+| Serien-Review | `#serie #review` + ★★★★★ | The Mandalorian |
+| Buch-Review | `#buch #review` + ★★★★★ | Der Hobbit |
+| Ort-Review | `#ort #review` + ★★★★★ | Restaurant, Laden, Park |
+| CC-Lizenz | `#cc` | Für einzelne Posts |
 
-Zutaten:
-- 2 Gurken
-- 200ml Sahne
-...
+**Alternative Ort-Tags:**
+- `#restaurant` (für Restaurants/Cafés)
+- `#laden` oder `#shop` (für Geschäfte)
+- `#ort` (für alles andere)
 
-#rezept #sommer #cc
-```
+Alle funktionieren gleich, Google versteht es als "Ort" (Place).
 
-→ Erzeugt Recipe Schema + ImageObject mit CC-Lizenz!
-
-**Beispiel: Restaurant-Review mit Sternen**
-```
-Pizzeria Da Mario
-
-⭐⭐⭐⭐
-
-Tolle Pizza, super Ambiente!
-
-#restaurant #pizza #review
-```
-
-→ Erzeugt Restaurant-Review mit 4 Sternen!
+---
 
 ## Testen
 
-1. **Rich Results Test:** https://search.google.com/test/rich-results
-   - Gib deine Post-URL ein
-   - Prüfe, ob Schema.org korrekt erkannt wird
+**Google Rich Results Test:**
+https://search.google.com/test/rich-results
 
-2. **Schema Validator:** https://validator.schema.org/
-   - Validiert dein JSON-LD
+1. Post erstellen mit Tags
+2. URL in Test eingeben
+3. Schauen ob Schema erkannt wird
 
-3. **In der Praxis:**
-   - Suche auf Google mit `site:deine-domain.de [suchbegriff]`
-   - Rich Snippets erscheinen oft nur bei Site-spezifischen Suchen
+**In Google suchen:**
+```
+site:deine-domain.de [suchbegriff]
+```
 
-## Verfügbare Tags - Übersicht
+Viele Rich Snippets erscheinen nur bei `site:` Suchen.
 
-| Feature | Tags |
-|---------|------|
-| Rezepte | `rezeptvomchef`, `rezept`, `recipe`, `kochen` |
-| Reviews | `review`, `rezension`, `bewertung`, `kritik` |
-| Videos | `video`, `vlog` |
-| CC-Lizenz | `cc`, `creative-commons` |
-
-**Review-Typ-Tags:**
-| Typ | Tags |
-|-----|------|
-| Film | `film`, `movie`, `kino` |
-| Serie | `serie`, `tv`, `fernsehen` |
-| Buch | `buch`, `book`, `lesen` |
-| Restaurant | `restaurant`, `essen`, `pizza`, `cafe` |
-| Laden/Shop | `laden`, `shop`, `geschäft`, `store` |
-| Ort | `ort`, `place`, `location` |
+---
 
 ## Tipps
 
-1. **Sternchen kopieren:**
-   - ⭐ (gefüllter Stern) oder
-   - ★ (schwarzer Stern) - beide funktionieren!
-2. **Tags in Micro.blog:** Schreibe Tags am Ende mit `#tag`
-3. **Geduld:** Google braucht Tage/Wochen um strukturierte Daten zu indexieren
-4. **Nicht für Klicks optimieren:** Sieh es als Experiment, nicht als SEO-Hack
-5. **site: Suche nutzen:** Viele Rich Snippets erscheinen nur bei `site:deine-domain.de` Suchen
+1. **Geduld:** Google braucht Tage/Wochen zum Indexieren
+2. **Sternchen:** Nur gefüllte zählen (★ oder ⭐), nicht ☆
+3. **Einfach halten:** Tags am Ende, fertig!
 
-## Was ohne Frontmatter nicht geht
+---
 
-Einige erweiterte Features brauchen Frontmatter und sind in Micro.blog nicht nutzbar:
-- Detaillierte Rezept-Zeiten (prepTime, cookTime)
-- Zutatenlisten und Anweisungen als strukturierte Listen
-- Spezifische Video-URLs (contentUrl, embedUrl)
-- Restaurant-Adressen für Place-Reviews
+## Das war's!
 
-**Aber:** Die Basis-Features (Recipe mit Tag, Review mit Sternen, Video mit Tag, CC-Lizenz) funktionieren perfekt!
+**Rezept:** `#rezeptvomchef`
+**Review:** Sternchen ★★★★★ + `#review` + `#film` / `#serie` / `#buch` / `#ort`
+**CC-Fotos:** `#cc` oder global einstellen
 
-## Inspiration
-
-Diese Features sind inspiriert von Felix Schwenzels [Search Engine Experimentation Artikel](https://wirres.net/articles/zwischenstand-search-engine-experimentation-see).
+Inspiriert von Felix Schwenzels [Search Engine Experimentation](https://wirres.net/articles/zwischenstand-search-engine-experimentation-see).

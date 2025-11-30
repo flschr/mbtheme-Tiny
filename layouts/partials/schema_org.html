@@ -3,15 +3,13 @@
   - Erzeugt strukturierte Daten für verschiedene Content-Typen:
       * Blog  (nur Startseite)
       * BlogPosting (Posts) oder WebPage (statische Seiten)
-      * Recipe (wenn .Params.recipe gesetzt)
-      * Review (wenn .Params.rating oder .Params.review gesetzt)
-      * VideoObject (wenn .Params.video gesetzt)
-      * ImageObject mit Creative Commons (wenn .Params.license gesetzt)
+      * Recipe (Tag: rezeptvomchef)
+      * Review (Tag: review + Sternchen ★ oder ⭐)
+      * ImageObject mit Creative Commons (Tag: cc oder Site.Params.license)
       * BreadcrumbList (außer auf Home)
-  - Bildlogik (Fallback-Kaskade):
-      hero* Resource → erstes Page-Image → erstes .Params.photos → .Site.Params.default_image
+  - Review-Typen: Film (Movie), Serie (TVSeries), Buch (Book), Ort (Place)
+  - Bildlogik: hero* Resource → Page-Image → .Params.photos → default_image
   - Sprache: fallback "de"
-  - Einbinden im <head> via: {{ partial "schema_org.html" . }}
 */}}
 
 {{- $iso := "2006-01-02T15:04:05-07:00" -}}
@@ -227,15 +225,13 @@
   {{- end -}}
 {{- end -}}
 
-{{/* Bestimme Review-Typ aus Tags */}}
+{{/* Bestimme Review-Typ aus Tags - vereinfacht auf Film, Serie, Buch, Ort */}}
 {{- range $term := .GetTerms "tags" }}
   {{- $tag := lower $term.LinkTitle -}}
   {{- if in (slice "film" "movie" "kino") $tag }}{{ $reviewItemType = "Movie" }}{{ end -}}
   {{- if in (slice "serie" "tv" "fernsehen") $tag }}{{ $reviewItemType = "TVSeries" }}{{ end -}}
   {{- if in (slice "buch" "book" "lesen") $tag }}{{ $reviewItemType = "Book" }}{{ end -}}
-  {{- if in (slice "restaurant" "essen" "pizza" "cafe") $tag }}{{ $reviewItemType = "Restaurant" }}{{ end -}}
-  {{- if in (slice "laden" "shop" "geschäft" "store") $tag }}{{ $reviewItemType = "Store" }}{{ end -}}
-  {{- if in (slice "ort" "place" "location") $tag }}{{ $reviewItemType = "Place" }}{{ end -}}
+  {{- if in (slice "restaurant" "laden" "shop" "geschäft" "ort" "place" "cafe" "location") $tag }}{{ $reviewItemType = "Place" }}{{ end -}}
 {{- end -}}
 
 {{- if and $isReview (gt $ratingValue 0) -}}
@@ -280,7 +276,7 @@
     ,
     "image": {{ printf "%q" . }}
     {{- end }}
-    {{- if or (eq .Params.review.itemType "Place") (eq $reviewItemType "Place") (eq $reviewItemType "Restaurant") (eq $reviewItemType "Store") }}
+    {{- if or (eq .Params.review.itemType "Place") (eq $reviewItemType "Place") }}
     {{- with .Params.review.address -}}
     ,
     "address": {
@@ -292,55 +288,6 @@
     }
     {{- end }}
     {{- end }}
-  }
-}
-</script>
-{{- end -}}
-
-{{/* VideoObject Schema - aktiviert durch Tag "video" ODER .Params.video */}}
-{{- $isVideo := false -}}
-{{- if .Params.video }}{{ $isVideo = true }}{{ end -}}
-{{- range $term := .GetTerms "tags" }}
-  {{- if in (slice "video" "film" "vlog") (lower $term.LinkTitle) }}{{ $isVideo = true }}{{ end -}}
-{{- end -}}
-{{- range $term := .GetTerms "categories" }}
-  {{- if in (slice "video" "videos") (lower $term.LinkTitle) }}{{ $isVideo = true }}{{ end -}}
-{{- end -}}
-
-{{- if $isVideo -}}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "VideoObject",
-  "name": {{ printf "%q" (.Params.video.name | default .Title | plainify) }},
-  "description": {{ printf "%q" (.Params.video.description | default .Summary | plainify | truncate 200) }},
-  {{- with .Params.video.thumbnailUrl }}
-  "thumbnailUrl": {{ printf "%q" . }},
-  {{- else }}
-  {{- with $img }}
-  "thumbnailUrl": {{ printf "%q" . }},
-  {{- end }}
-  {{- end }}
-  {{- with .Params.video.contentUrl }}
-  "contentUrl": {{ printf "%q" . }},
-  {{- end }}
-  {{- with .Params.video.embedUrl }}
-  "embedUrl": {{ printf "%q" . }},
-  {{- end }}
-  {{- with .Params.video.uploadDate }}
-  "uploadDate": {{ printf "%q" . }},
-  {{- else }}
-  {{- with .Date }}
-  "uploadDate": {{ printf "%q" (.Format $iso) }},
-  {{- end }}
-  {{- end }}
-  {{- with .Params.video.duration }}
-  "duration": {{ printf "%q" . }},
-  {{- end }}
-  "author": {
-    "@type": "Person",
-    "name": {{ printf "%q" $authorName }},
-    "url": {{ printf "%q" $authorURLAbs }}
   }
 }
 </script>
