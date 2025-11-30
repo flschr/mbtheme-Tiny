@@ -1,8 +1,12 @@
-{{/* 
+{{/*
   schema_org.html — JSON-LD für fischr.org
-  - Erzeugt je Seite genau EIN Snippet:
+  - Erzeugt strukturierte Daten für verschiedene Content-Typen:
       * Blog  (nur Startseite)
       * BlogPosting (Posts) oder WebPage (statische Seiten)
+      * Recipe (wenn .Params.recipe gesetzt)
+      * Review (wenn .Params.rating oder .Params.review gesetzt)
+      * VideoObject (wenn .Params.video gesetzt)
+      * ImageObject mit Creative Commons (wenn .Params.license gesetzt)
       * BreadcrumbList (außer auf Home)
   - Bildlogik (Fallback-Kaskade):
       hero* Resource → erstes Page-Image → erstes .Params.photos → .Site.Params.default_image
@@ -112,6 +116,191 @@
   {{- with .WordCount -}}, "wordCount": {{ . }}{{- end }}
 }
 </script>
+{{- end -}}
+
+{{/* Recipe Schema (wenn .Params.recipe gesetzt) */}}
+{{- if .Params.recipe -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Recipe",
+  "name": {{ printf "%q" (.Params.recipe.name | default .Title | plainify) }},
+  "description": {{ printf "%q" (.Params.recipe.description | default .Summary | plainify | truncate 200) }},
+  {{- with $img }}
+  "image": [ {{ printf "%q" . }} ],
+  {{- end }}
+  {{- with .Params.recipe.prepTime }}
+  "prepTime": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.cookTime }}
+  "cookTime": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.totalTime }}
+  "totalTime": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeYield }}
+  "recipeYield": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeCategory }}
+  "recipeCategory": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeCuisine }}
+  "recipeCuisine": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.keywords }}
+  "keywords": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeIngredient }}
+  "recipeIngredient": [
+    {{- range $index, $ingredient := . -}}
+      {{- if $index }}, {{ end -}}{{ printf "%q" $ingredient }}
+    {{- end }}
+  ],
+  {{- end }}
+  {{- with .Params.recipe.recipeInstructions }}
+  "recipeInstructions": [
+    {{- range $index, $step := . }}
+    {{- if $index }}, {{ end -}}
+    {
+      "@type": "HowToStep",
+      "text": {{ printf "%q" $step }}
+    }
+    {{- end }}
+  ],
+  {{- end }}
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  },
+  {{- with .Date }}
+  "datePublished": {{ printf "%q" (.Format $iso) }},
+  {{- end }}
+  "url": {{ printf "%q" .Permalink }}
+}
+</script>
+{{- end -}}
+
+{{/* Review Schema (wenn .Params.rating oder .Params.review gesetzt) */}}
+{{- if or .Params.rating .Params.review -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Review",
+  {{- with $img }}
+  "image": [ {{ printf "%q" . }} ],
+  {{- end }}
+  "reviewRating": {
+    "@type": "Rating",
+    "ratingValue": {{ .Params.rating.value | default .Params.rating }},
+    {{- with .Params.rating.bestRating }}
+    "bestRating": {{ . }},
+    {{- else }}
+    "bestRating": 5,
+    {{- end }}
+    {{- with .Params.rating.worstRating }}
+    "worstRating": {{ . }}
+    {{- else }}
+    "worstRating": 1
+    {{- end }}
+  },
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  },
+  {{- with .Date }}
+  "datePublished": {{ printf "%q" (.Format $iso) }},
+  {{- end }}
+  "reviewBody": {{ printf "%q" (.Content | plainify | truncate 500) }},
+  "itemReviewed": {
+    {{- if .Params.review.itemType }}
+    "@type": {{ printf "%q" .Params.review.itemType }},
+    {{- else }}
+    "@type": "Thing",
+    {{- end }}
+    "name": {{ printf "%q" (.Params.review.itemName | default .Title | plainify) }}
+    {{- with .Params.review.itemImage -}}
+    ,
+    "image": {{ printf "%q" . }}
+    {{- end }}
+    {{- if eq .Params.review.itemType "Place" }}
+    {{- with .Params.review.address -}}
+    ,
+    "address": {
+      "@type": "PostalAddress",
+      {{- with .streetAddress }}"streetAddress": {{ printf "%q" . }},{{ end }}
+      {{- with .addressLocality }}"addressLocality": {{ printf "%q" . }},{{ end }}
+      {{- with .postalCode }}"postalCode": {{ printf "%q" . }},{{ end }}
+      {{- with .addressCountry }}"addressCountry": {{ printf "%q" . }}{{ end }}
+    }
+    {{- end }}
+    {{- end }}
+  }
+}
+</script>
+{{- end -}}
+
+{{/* VideoObject Schema (wenn .Params.video gesetzt) */}}
+{{- if .Params.video -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": {{ printf "%q" (.Params.video.name | default .Title | plainify) }},
+  "description": {{ printf "%q" (.Params.video.description | default .Summary | plainify | truncate 200) }},
+  {{- with .Params.video.thumbnailUrl }}
+  "thumbnailUrl": {{ printf "%q" . }},
+  {{- else }}
+  {{- with $img }}
+  "thumbnailUrl": {{ printf "%q" . }},
+  {{- end }}
+  {{- end }}
+  {{- with .Params.video.contentUrl }}
+  "contentUrl": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.video.embedUrl }}
+  "embedUrl": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.video.uploadDate }}
+  "uploadDate": {{ printf "%q" . }},
+  {{- else }}
+  {{- with .Date }}
+  "uploadDate": {{ printf "%q" (.Format $iso) }},
+  {{- end }}
+  {{- end }}
+  {{- with .Params.video.duration }}
+  "duration": {{ printf "%q" . }},
+  {{- end }}
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  }
+}
+</script>
+{{- end -}}
+
+{{/* ImageObject with Creative Commons License */}}
+{{- if .Params.license -}}
+{{- range $index, $photo := .Params.photos }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ImageObject",
+  "contentUrl": {{ printf "%q" $photo }},
+  "license": {{ printf "%q" ($.Params.license.url | default "https://creativecommons.org/licenses/by-sa/4.0/") }},
+  "acquireLicensePage": {{ printf "%q" $.Permalink }},
+  "creator": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  },
+  "creditText": {{ printf "%q" ($.Params.license.attribution | default $authorName) }},
+  "copyrightNotice": {{ printf "%q" ($.Params.license.notice | default (printf "© %s - %s" $authorName ($.Params.license.name | default "CC BY-SA 4.0"))) }}
+}
+</script>
+{{- end }}
 {{- end -}}
 
 {{/* 2) Breadcrumbs (nicht auf Home) */}}
