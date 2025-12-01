@@ -2,33 +2,53 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  
-  <!-- Security Headers -->
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  
+  <meta name="color-scheme" content="light dark">
+
   <!-- DNS-Prefetch & Preconnect für externe Ressourcen -->
   <link rel="dns-prefetch" href="https://micro.blog">
   <link rel="preconnect" href="https://micro.blog" crossorigin>
+  {{ if .Params.photos }}
   <link rel="preconnect" href="https://micro.blog/photos" crossorigin>
+  {{ end }}
+  <link rel="dns-prefetch" href="https://stats.fischr.org">
+  <link rel="preconnect" href="https://stats.fischr.org" crossorigin>
+
+  <!-- Preload kritischer lokaler Assets -->
+  <link rel="preload" href="{{ "/js/utils.js" | relURL }}" as="script">
   
   <!-- Cache-Buster: Nutze Hugo Build-Zeit oder Git-Hash -->
   {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
-  
+
   <!-- Kritisches CSS mit Fingerprinting & Minification -->
   {{ if templates.Exists "partials/microhook-uncss.html" }}
     {{ partial "microhook-uncss.html" . }}
   {{ else }}
     {{ $mainCss := resources.Get "css/main.css" }}
     {{ if $mainCss }}
-      {{ $mainCss = $mainCss | minify | fingerprint }}
-      <link rel="stylesheet" href="{{ $mainCss.Permalink }}" integrity="{{ $mainCss.Data.Integrity }}">
+      {{ $mainCss = $mainCss | minify | fingerprint "sha256" }}
+      <link rel="preload" href="{{ $mainCss.RelPermalink }}" as="style" fetchpriority="high">
+      <link rel="stylesheet" href="{{ $mainCss.RelPermalink }}" integrity="{{ $mainCss.Data.Integrity }}">
     {{ else }}
+      <!-- Fallback ohne Resource Pipeline -->
+      <link rel="preload" href="{{ "css/main.css" | relURL }}?v={{ $buildHash }}" as="style" fetchpriority="high">
       <link rel="stylesheet" href="{{ "css/main.css" | relURL }}?v={{ $buildHash }}">
     {{ end }}
   {{ end }}
   
   <!-- Social Media Meta Tags -->
+  {{ $ogAlt := "" }}
+  {{ with .Title }}
+    {{ $ogAlt = . }}
+  {{ end }}
+  {{ if not $ogAlt }}
+    {{ with .Site.Params.opengraph.altFallback }}
+      {{ $ogAlt = . }}
+    {{ end }}
+  {{ end }}
+  {{ if not $ogAlt }}
+    {{ $ogAlt = .Site.Title }}
+  {{ end }}
+
   <meta name="twitter:card" content="{{ if .Params.photos }}summary_large_image{{ else }}summary{{ end }}">
   {{ with .Site.Params.twitter_username }}
     <meta name="twitter:site" content="@{{ . }}">
@@ -48,6 +68,8 @@
     <meta name="description" content="{{ .Site.Params.itunes_description }}">
     <meta name="twitter:image" content="{{ .Site.Author.avatar }}">
     <meta property="og:image" content="{{ .Site.Author.avatar }}">
+    <meta name="twitter:image:alt" content="{{ $ogAlt }}">
+    <meta property="og:image:alt" content="{{ $ogAlt }}">
   {{ else }}
     {{ $description := .Summary | plainify | truncate 155 }}
     <meta name="twitter:description" content="{{ $description }}">
@@ -59,12 +81,15 @@
     {{ range first 1 .Params.photos }}
       <meta name="twitter:image" content="{{ . }}">
       <meta property="og:image" content="{{ . }}">
-      <meta property="og:image:alt" content="{{ $.Title | default "Foto" }}">
+      <meta name="twitter:image:alt" content="{{ $ogAlt }}">
+      <meta property="og:image:alt" content="{{ $ogAlt }}">
     {{ end }}
   {{ else }}
     {{ with .Params.opengraph.image }}
       <meta name="twitter:image" content="{{ . }}">
       <meta property="og:image" content="{{ . }}">
+      <meta name="twitter:image:alt" content="{{ $ogAlt }}">
+      <meta property="og:image:alt" content="{{ $ogAlt }}">
     {{ end }}
   {{ end }}
   
@@ -99,12 +124,20 @@
   {{ if or .Params.noindex (eq .Kind "404") }}
     <meta name="robots" content="noindex, nofollow">
   {{ end }}
+
+  {{ if eq .Kind "404" }}
+    <meta http-equiv="refresh" content="6;url={{ "/random" | relURL }}">
+  {{ end }}
   
   <!-- Structured Data -->
   {{ partial "schema_org.html" . }}
   
   <!-- Micro.blog Head (enthält Favicon, Feeds, IndieWeb Links) -->
   {{ partial "microblog_head.html" . }}
+
+  <!-- Click-2-Load -->
+  {{ partial "embed-consent-config.html" . }}
+  <link rel="stylesheet" href="{{ "css/embed-consent.css" | relURL }}">
   
   <!-- Custom Hooks -->
   {{ if templates.Exists "partials/microhook-head.html" }}

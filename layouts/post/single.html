@@ -10,23 +10,21 @@
     {{ if templates.Exists "partials/microhook-post-byline.html" }}
     {{ partial "microhook-post-byline.html" . }}
     {{ else }}
-    <a href="{{ .Permalink }}" class="post-date u-url"><time class="dt-published" datetime="{{ .Date.Format "2006-01-02 15:04:05 -0700" }}">{{ .Date.Format "Jan 2, 2006" }}</time> ∞</a>
+    <a href="{{ .Permalink }}" class="post-date u-url"><time class="dt-published" datetime="{{ .Date.Format "2006-01-02 15:04:05 -0700" }}">{{ .Date.Format "Jan 2, 2006" }}</time> ∞</a>{{ if .Title }} <span class="reading-time">· Lesedauer {{ .ReadingTime }} Minuten</span>{{ end }}
     {{ with .Params.audio }}
-      <script type="text/javascript" src="https://micro.blog/narration.js?url={{ . }}"></script>
+      <script async type="text/javascript" src="https://micro.blog/narration.js?url={{ . }}"></script>
     {{ end }}
     {{ end }}
-{{- $hideTitle  := .Params.hideTitle  | default false -}}
-{{- $forceTitle := .Params.forceTitle | default false -}}
 {{ if .Title }}
-    <h2 class="p-name">{{ .Title }}</h2>
+    <h1 class="p-name">{{ .Title }}</h1>
     {{ end }}
   </header>
 
   <article class="post-content e-content">
-    {{ .Content }}
+        {{ .Content }}
   </article>
 
-  {{ if templates.Exists "partials/microhook-categories.html" }}
+  <!-- {{ if templates.Exists "partials/microhook-categories.html" }}
   {{ partial "microhook-categories.html" . }}
   {{ else }}
   {{ if .Params.categories }}
@@ -42,14 +40,11 @@
 
   {{ if templates.Exists "partials/microhook-after-post.html" }}
   {{ partial "microhook-after-post.html" . }}
-  {{ end }}
+  {{ end }}-->
 
 </div>
 {{ if or (templates.Exists "partials/reply-by-email.html") (templates.Exists "partials/conversation-link.html") (templates.Exists "partials/plugin_tinylytics.html") (templates.Exists "partials/reply-on-mastodon.html") (templates.Exists "partials/microhook-share-button.html")}}
 <ul class="reply-buttons">
-  {{ if templates.Exists "partials/plugin_tinylytics.html" }}
-  <li><button class="tinylytics_kudos">Kudos</button></li>
-  {{ end }}
   {{ if templates.Exists "partials/reply-by-email.html" }}
   <li>{{ partial "reply-by-email.html" . }}</li>
   {{ end }}
@@ -58,9 +53,6 @@
   {{ end }}
   {{ if templates.Exists "partials/reply-on-mastodon.html" }}
   <li>{{ partial "reply-on-mastodon.html" . }}</li>
-  {{ end }}
-  {{ if templates.Exists "partials/microhook-share-button.html" }}
-  {{ partial "microhook-share-button.html" . }}
   {{ end }}
 </ul>
   {{ end }}

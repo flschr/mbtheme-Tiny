@@ -1,0 +1,16 @@
+{{ define "title" }}
+404 - Seite nicht gefunden | {{ .Site.Title }}
+{{ end }}
+
+{{ define "main" }}
+<div class="page">
+  <article class="post-content">
+    <p>Very oooopsi! Diese Seite gibt es leider nicht. Du wirst in <noscript>Kürze</noscript><span id="countdown-container" style="display:none"><span id="countdown-value">6</span> Sekunden</span> zu einem zufälligen Qualitätsartikel weitergeleitet.</p>
+
+    <img src="/img/404.webp" alt="Ein Einhorn erbricht einen Regenbogen, satter 404!" loading="lazy" decoding="async" width="1200" height="900">
+  </article>
+</div>
+
+{{ $buildHash := .Site.Params.buildHash | default now.Unix }}
+<script defer src="{{ "/js/404-redirect.js" | relURL }}?v={{ $buildHash }}"></script>
+{{ end }}

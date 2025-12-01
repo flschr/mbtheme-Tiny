@@ -3,11 +3,39 @@
     <p style="margin-top: 2em;">
       Read a random <a href="/random" title="random blog article">post</a> or wander to
       <a href="https://uberblogr.de/rand/fischr" title="random blog">another blog</a>.<br />
-      That’s all there is, there isn’t any more.
+      That's all there is, there isn't any more.
     </p>
   </div>
 
+  <!-- Scroll to top button -->
+  <button
+    type="button"
+    id="myBtn"
+    title="Zurück nach oben"
+    aria-label="Zurück nach oben">
+    <span class="scroll-btn__icon" aria-hidden="true">↑</span>
+  </button>
+
+  <!-- JavaScript with cache busting -->
+  {{ $buildHash := .Site.Params.buildHash | default now.Unix }}
+
+  <!-- Core utilities (defer: non-blocking) -->
+  <script defer src="{{ "/js/utils.js" | relURL }}?v={{ $buildHash }}"></script>
+  <script defer src="{{ "/js/scroll-to-top.js" | relURL }}?v={{ $buildHash }}"></script>
+  <script defer src="{{ "/js/keyboard-shortcuts.js" | relURL }}?v={{ $buildHash }}"></script>
+
+  <!-- Conditional: Copy-code only on pages with code blocks -->
+  {{ if or (findRE "<pre" .Content) (findRE "highlight" .Content) (findRE "```" .RawContent) }}
+  <script defer src="{{ "/js/copy-code.js" | relURL }}?v={{ $buildHash }}"></script>
+  {{ end }}
+
+  <!-- Click-2-Load -->
+  <script src="{{ "js/embed-consent.js" | relURL }}"></script>
+
   <!-- Analytics -->
-  <script defer data-domain="fischr.org" src="https://pb.fischr.org/js/script.js"></script>
-  <script>window.plausible = window.plausible || function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}</script>
+  <script data-goatcounter="https://stats.fischr.org/count"
+          async src="/js/count.js"></script>
+  <noscript>
+    <img src="https://stats.fischr.org/count?p={{ .RelPermalink | urlquery }}" alt="" referrerpolicy="no-referrer-when-downgrade" />
+  </noscript>
 </footer>

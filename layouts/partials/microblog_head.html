@@ -1,7 +1,7 @@
 <!-- Favicon -->
-<link rel="shortcut icon" href="/uploads/2025/favicon.png" type="image/x-icon">
-<link rel="icon" href="/uploads/2025/favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="/uploads/2025/favicon.png">
+<link rel="shortcut icon" href="/img/favicon.png" type="image/x-icon">
+<link rel="icon" href="/img/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/favicon.png">
 
 <!-- Feeds -->
 {{ $title := site.Title }}
@@ -16,10 +16,14 @@
 {{- end }}
 
 <!-- IndieWeb / rel=me Links -->
-<link rel="me" href="https://micro.blog/fischr?remote_follow=1">
-<link rel="me" href="https://github.com/flschr">
-<link rel="me" href="https://www.openstreetmap.org/user/fischr">
-<link rel="me" href="https://twitter.com/flschr">
+{{- with .Site.Params.social }}
+  {{- range . }}
+    {{- $rel := .relme | default .url }}
+    {{- with $rel }}
+<link rel="me" href="{{ . }}">
+    {{- end }}
+  {{- end }}
+{{- end }}
 
 <!-- IndieWeb Endpoints -->
 <link rel="EditURI" type="application/rsd+xml" href="{{ "rsd.xml" | absURL }}">
@@ -28,4 +32,3 @@
 <link rel="subscribe" href="https://micro.blog/users/follow">
 <link rel="webmention" href="https://micro.blog/webmention">
 <link rel="micropub" href="https://micro.blog/micropub">
-<link rel="microsub" href="https://micro.blog/microsub">

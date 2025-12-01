@@ -1,13 +1,15 @@
-{{/* 
+{{/*
   schema_org.html — JSON-LD für fischr.org
-  - Erzeugt je Seite genau EIN Snippet:
+  - Erzeugt strukturierte Daten für verschiedene Content-Typen:
       * Blog  (nur Startseite)
       * BlogPosting (Posts) oder WebPage (statische Seiten)
+      * Recipe (Tag: rezeptvomchef)
+      * Review (Tag: review + Sternchen ★ oder ⭐)
+      * ImageObject mit Creative Commons (Tag: cc oder Site.Params.license)
       * BreadcrumbList (außer auf Home)
-  - Bildlogik (Fallback-Kaskade):
-      hero* Resource → erstes Page-Image → erstes .Params.photos → .Site.Params.default_image
+  - Review-Typen: Film (Movie), Serie (TVSeries), Buch (Book), Ort (Place)
+  - Bildlogik: hero* Resource → Page-Image → .Params.photos → default_image
   - Sprache: fallback "de"
-  - Einbinden im <head> via: {{ partial "schema_org.html" . }}
 */}}
 
 {{- $iso := "2006-01-02T15:04:05-07:00" -}}
@@ -15,6 +17,12 @@
 {{- $authorName := .Site.Author.name | default .Site.Title -}}
 {{- $authorURL  := .Site.Author.url  | default .Site.BaseURL -}}
 {{- $authorURLAbs := $authorURL | absURL -}}
+{{- $sameAs := slice -}}
+{{- range .Site.Params.social }}
+  {{- with .url }}
+    {{- $sameAs = $sameAs | append (. | absURL) -}}
+  {{- end }}
+{{- end -}}
 
 {{/* Bild finden (absolute URL sicherstellen) */}}
 {{- $img := "" -}}
@@ -33,10 +41,22 @@
   "url": {{ printf "%q" .Site.BaseURL }},
   "inLanguage": {{ printf "%q" $lang }},
   "description": {{ printf "%q" (.Site.Params.description | default .Site.Title) }},
+  {{- with $sameAs }}
+  "sameAs": [
+    {{- range $index, $url := . -}}
+      {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+    {{- end }}
+  ],
+  {{- end }}
   "publisher": {
     "@type": "Organization",
     "name": {{ printf "%q" .Site.Title }},
-    "url": {{ printf "%q" .Site.BaseURL }}
+    "url": {{ printf "%q" .Site.BaseURL }}{{- with $sameAs }},
+    "sameAs": [
+      {{- range $index, $url := . -}}
+        {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+      {{- end }}
+    ]{{- end }}
   }
 }
 </script>
@@ -60,8 +80,33 @@
   {{- with .Lastmod }} "dateModified": {{ printf "%q" (.Format $iso) }}, {{ end -}}
   "inLanguage": {{ printf "%q" $lang }},
   "url": {{ printf "%q" .Permalink }},
-  "author": { "@type": "Person", "name": {{ printf "%q" $authorName }}, "url": {{ printf "%q" $authorURLAbs }} },
-  "publisher": { "@type": "Organization", "name": {{ printf "%q" .Site.Title }}, "url": {{ printf "%q" .Site.BaseURL }} }
+  {{- with $sameAs }}
+  "sameAs": [
+    {{- range $index, $url := . -}}
+      {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+    {{- end }}
+  ],
+  {{- end }}
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}{{- with $sameAs }},
+    "sameAs": [
+      {{- range $index, $url := . -}}
+        {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+      {{- end }}
+    ]{{- end }}
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": {{ printf "%q" .Site.Title }},
+    "url": {{ printf "%q" .Site.BaseURL }}{{- with $sameAs }},
+    "sameAs": [
+      {{- range $index, $url := . -}}
+        {{- if $index }}, {{ end -}}{{ printf "%q" $url }}
+      {{- end }}
+    ]{{- end }}
+  }
   {{- with .GetTerms "categories" -}}
   , "articleSection": {{ printf "%q" (index . 0).LinkTitle }},
     "keywords": [{{ range $i,$t := . }}{{ if $i }}, {{ end }}{{ printf "%q" $t.LinkTitle }}{{ end }}]
@@ -69,6 +114,240 @@
   {{- with .WordCount -}}, "wordCount": {{ . }}{{- end }}
 }
 </script>
+{{- end -}}
+
+{{/* Recipe Schema - aktiviert durch Tag/Category "rezeptvomchef" ODER .Params.recipe */}}
+{{- $isRecipe := false -}}
+{{- if .Params.recipe }}{{ $isRecipe = true }}{{ end -}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "rezeptvomchef" "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
+{{- end -}}
+{{- range $term := .GetTerms "categories" }}
+  {{- if in (slice "rezeptvomchef" "rezept" "recipe" "kochen") (lower $term.LinkTitle) }}{{ $isRecipe = true }}{{ end -}}
+{{- end -}}
+
+{{- if $isRecipe -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Recipe",
+  "name": {{ printf "%q" (.Params.recipe.name | default .Title | plainify) }},
+  "description": {{ printf "%q" (.Params.recipe.description | default .Summary | plainify | truncate 200) }},
+  {{- with $img }}
+  "image": [ {{ printf "%q" . }} ],
+  {{- end }}
+  {{- with .Params.recipe.prepTime }}
+  "prepTime": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.cookTime }}
+  "cookTime": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.totalTime }}
+  "totalTime": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeYield }}
+  "recipeYield": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeCategory }}
+  "recipeCategory": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeCuisine }}
+  "recipeCuisine": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.keywords }}
+  "keywords": {{ printf "%q" . }},
+  {{- end }}
+  {{- with .Params.recipe.recipeIngredient }}
+  "recipeIngredient": [
+    {{- range $index, $ingredient := . -}}
+      {{- if $index }}, {{ end -}}{{ printf "%q" $ingredient }}
+    {{- end }}
+  ],
+  {{- end }}
+  {{- with .Params.recipe.recipeInstructions }}
+  "recipeInstructions": [
+    {{- range $index, $step := . }}
+    {{- if $index }}, {{ end -}}
+    {
+      "@type": "HowToStep",
+      "text": {{ printf "%q" $step }}
+    }
+    {{- end }}
+  ],
+  {{- end }}
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  },
+  {{- with .Date }}
+  "datePublished": {{ printf "%q" (.Format $iso) }},
+  {{- end }}
+  "url": {{ printf "%q" .Permalink }}
+}
+</script>
+{{- end -}}
+
+{{/* Review Schema - aktiviert durch Tag "review"/"rezension" ODER .Params.rating ODER Sternchen im Content */}}
+{{- $isReview := false -}}
+{{- $ratingValue := 0.0 -}}
+{{- $reviewItemType := "Thing" -}}
+
+{{/* Prüfe auf explizites Rating in Params */}}
+{{- if .Params.rating }}
+  {{- $isReview = true -}}
+  {{- if reflect.IsMap .Params.rating }}
+    {{- $ratingValue = .Params.rating.value -}}
+  {{- else }}
+    {{- $ratingValue = .Params.rating -}}
+  {{- end }}
+{{- end -}}
+
+{{/* Prüfe auf review Tag/Category */}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "review" "rezension" "bewertung" "kritik") (lower $term.LinkTitle) }}{{ $isReview = true }}{{ end -}}
+{{- end -}}
+{{- range $term := .GetTerms "categories" }}
+  {{- if in (slice "review" "rezension" "bewertung" "kritik") (lower $term.LinkTitle) }}{{ $isReview = true }}{{ end -}}
+{{- end -}}
+
+{{/* Automatische Sternchen-Erkennung im Content (⭐⭐⭐⭐⭐ oder ★★★★★) */}}
+{{- if not $ratingValue -}}
+  {{- $content := .Content | plainify -}}
+  {{/* Suche nach ⭐ (U+2B50) oder ★ (U+2605) */}}
+  {{- $stars := findRE "[⭐★]+" $content 1 -}}
+  {{- if $stars -}}
+    {{- $starCount := len (index $stars 0) -}}
+    {{- if gt $starCount 0 -}}
+      {{- $isReview = true -}}
+      {{- $ratingValue = $starCount -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Bestimme Review-Typ aus Tags - vereinfacht auf Film, Serie, Buch, Ort */}}
+{{- range $term := .GetTerms "tags" }}
+  {{- $tag := lower $term.LinkTitle -}}
+  {{- if in (slice "film" "movie" "kino") $tag }}{{ $reviewItemType = "Movie" }}{{ end -}}
+  {{- if in (slice "serie" "tv" "fernsehen") $tag }}{{ $reviewItemType = "TVSeries" }}{{ end -}}
+  {{- if in (slice "buch" "book" "lesen") $tag }}{{ $reviewItemType = "Book" }}{{ end -}}
+  {{- if in (slice "restaurant" "laden" "shop" "geschäft" "ort" "place" "cafe" "location") $tag }}{{ $reviewItemType = "Place" }}{{ end -}}
+{{- end -}}
+
+{{- if and $isReview (gt $ratingValue 0) -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Review",
+  {{- with $img }}
+  "image": [ {{ printf "%q" . }} ],
+  {{- end }}
+  "reviewRating": {
+    "@type": "Rating",
+    "ratingValue": {{ $ratingValue }},
+    {{- if .Params.rating.bestRating }}
+    "bestRating": {{ .Params.rating.bestRating }},
+    {{- else }}
+    "bestRating": 5,
+    {{- end }}
+    {{- if .Params.rating.worstRating }}
+    "worstRating": {{ .Params.rating.worstRating }}
+    {{- else }}
+    "worstRating": 1
+    {{- end }}
+  },
+  "author": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  },
+  {{- with .Date }}
+  "datePublished": {{ printf "%q" (.Format $iso) }},
+  {{- end }}
+  "reviewBody": {{ printf "%q" (.Content | plainify | truncate 500) }},
+  "itemReviewed": {
+    {{- if .Params.review.itemType }}
+    "@type": {{ printf "%q" .Params.review.itemType }},
+    {{- else }}
+    "@type": {{ printf "%q" $reviewItemType }},
+    {{- end }}
+    "name": {{ printf "%q" (.Params.review.itemName | default .Title | plainify) }}
+    {{- with .Params.review.itemImage -}}
+    ,
+    "image": {{ printf "%q" . }}
+    {{- end }}
+    {{- if or (eq .Params.review.itemType "Place") (eq $reviewItemType "Place") }}
+    {{- with .Params.review.address -}}
+    ,
+    "address": {
+      "@type": "PostalAddress",
+      {{- with .streetAddress }}"streetAddress": {{ printf "%q" . }},{{ end }}
+      {{- with .addressLocality }}"addressLocality": {{ printf "%q" . }},{{ end }}
+      {{- with .postalCode }}"postalCode": {{ printf "%q" . }},{{ end }}
+      {{- with .addressCountry }}"addressCountry": {{ printf "%q" . }}{{ end }}
+    }
+    {{- end }}
+    {{- end }}
+  }
+}
+</script>
+{{- end -}}
+
+{{/* ImageObject with Creative Commons License - aktiviert durch .Site.Params.license ODER .Params.license ODER Tag "cc" */}}
+{{- $hasLicense := false -}}
+{{- $licenseURL := "" -}}
+{{- $licenseName := "CC BY-SA 4.0" -}}
+
+{{/* Prüfe Site-weite Lizenz-Einstellung */}}
+{{- if .Site.Params.license }}
+  {{- $hasLicense = true -}}
+  {{- if reflect.IsMap .Site.Params.license }}
+    {{- $licenseURL = .Site.Params.license.url | default "https://creativecommons.org/licenses/by-sa/4.0/" -}}
+    {{- $licenseName = .Site.Params.license.name | default "CC BY-SA 4.0" -}}
+  {{- else }}
+    {{- $licenseURL = .Site.Params.license -}}
+  {{- end }}
+{{- end -}}
+
+{{/* Post-spezifische Lizenz überschreibt Site-Default */}}
+{{- if .Params.license }}
+  {{- $hasLicense = true -}}
+  {{- if reflect.IsMap .Params.license }}
+    {{- $licenseURL = .Params.license.url | default "https://creativecommons.org/licenses/by-sa/4.0/" -}}
+    {{- $licenseName = .Params.license.name | default "CC BY-SA 4.0" -}}
+  {{- else }}
+    {{- $licenseURL = .Params.license -}}
+  {{- end }}
+{{- end -}}
+
+{{/* Aktivierung durch "cc" Tag */}}
+{{- range $term := .GetTerms "tags" }}
+  {{- if in (slice "cc" "creative-commons" "creativecommons") (lower $term.LinkTitle) }}
+    {{- $hasLicense = true -}}
+    {{- if not $licenseURL }}{{ $licenseURL = "https://creativecommons.org/licenses/by-sa/4.0/" }}{{ end -}}
+  {{- end -}}
+{{- end -}}
+
+{{/* Generiere ImageObject für alle Fotos wenn Lizenz aktiv */}}
+{{- if and $hasLicense .Params.photos -}}
+{{- range $index, $photo := .Params.photos }}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ImageObject",
+  "contentUrl": {{ printf "%q" $photo }},
+  "license": {{ printf "%q" $licenseURL }},
+  "acquireLicensePage": {{ printf "%q" $.Permalink }},
+  "creator": {
+    "@type": "Person",
+    "name": {{ printf "%q" $authorName }},
+    "url": {{ printf "%q" $authorURLAbs }}
+  },
+  "creditText": {{ printf "%q" ($.Params.license.attribution | default $authorName) }},
+  "copyrightNotice": {{ printf "%q" ($.Params.license.notice | default (printf "© %s - %s" $authorName $licenseName)) }}
+}
+</script>
+{{- end }}
 {{- end -}}
 
 {{/* 2) Breadcrumbs (nicht auf Home) */}}

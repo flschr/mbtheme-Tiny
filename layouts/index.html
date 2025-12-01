@@ -7,14 +7,14 @@
 {{ partial "microhook-before-post-list.html" . }}
 {{ end }}
 <div class="posts h-feed">
-    <div class="post_list" role="main">
+    <div class="post_list">
         {{ $paginator := .Paginate (where .Site.Pages.ByDate.Reverse "Type" "post") }}
         {{ range .Paginator.Pages }}
         <div class="post-preview h-entry {{ range .Params.categories }} {{ . | urlize | lower }}{{ end }}">
             {{ if templates.Exists "partials/microhook-post-list-byline.html" }}
             {{ partial "microhook-post-list-byline.html" . }}
             {{ else }}
-            <a href="{{ .Permalink }}" class="post-date u-url"><time class="dt-published" datetime="{{ .Date.Format "2006-01-02 15:04:05 -0700" }}">{{ .Date.Format "Jan 2, 2006" }}</time> ∞</a>
+            <a href="{{ .Permalink }}" class="post-date u-url"><time class="dt-published" datetime="{{ .Date.Format "2006-01-02 15:04:05 -0700" }}">{{ .Date.Format "Jan 2, 2006" }}</time> ∞</a>{{ if .Title }} <span class="reading-time">· Lesedauer {{ .ReadingTime }} Minuten</span>{{ end }}
             {{ end }}
             {{ if .Title }}
                 <h2 class="post-title p-name"><a href="{{ .Permalink }}">{{ .Title }}</a></h2>
@@ -35,7 +35,7 @@
                         </div>
                     {{ else if .Params.custom_summary }}
                     <div class="p-summary">
-                        <p>{{ .Summary | safeHTML }}<p>
+                        {{ .Summary | safeHTML }}
                     </div>
                     {{ else }}
                         <div class="e-content">
